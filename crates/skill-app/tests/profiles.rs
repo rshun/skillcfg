@@ -267,10 +267,22 @@ fn shared_root_keeps_disabled_custom_agent_as_a_possible_reader() {
     approve(&source, &env, document, false);
     let registry = load_registry(&source, &env).unwrap();
     let app = app(env, registry, Scope::User);
-    let readers = reader_exposures(&app.context.env.home.join(".example/skills/review"), &app.context).unwrap();
+    let readers = reader_exposures(
+        &app.context.env.home.join(".example/skills/review"),
+        &app.context,
+    )
+    .unwrap();
     assert!(readers.iter().any(|r| r.agent.as_str() == "codex"));
-    assert!(readers.iter().any(|r| r.agent.as_str() == "custom.shared" && r.evidence == skill_core::ReadState::Unknown));
-    assert_eq!(app.list_agent_skills(AgentId::parse("custom.shared").unwrap()).err().unwrap().code, "profile_not_enabled");
+    assert!(readers.iter().any(
+        |r| r.agent.as_str() == "custom.shared" && r.evidence == skill_core::ReadState::Unknown
+    ));
+    assert_eq!(
+        app.list_agent_skills(AgentId::parse("custom.shared").unwrap())
+            .err()
+            .unwrap()
+            .code,
+        "profile_not_enabled"
+    );
 }
 #[test]
 fn false_and_unknown_probes_do_not_switch_write_root_or_expose_other_fields() {
@@ -282,7 +294,10 @@ fn false_and_unknown_probes_do_not_switch_write_root_or_expose_other_fields() {
     let app = app(env, registry, Scope::User);
     let profile = app.context.registry.entries[0].profile.as_ref().unwrap();
     for (content, expected) in [
-        ("[compat]\nskills = false\nprivate = 'SYNTHETIC_PRIVATE_MARKER'", skill_core::ReadState::ConfigDisabled),
+        (
+            "[compat]\nskills = false\nprivate = 'SYNTHETIC_PRIVATE_MARKER'",
+            skill_core::ReadState::ConfigDisabled,
+        ),
         ("invalid = [", skill_core::ReadState::Unknown),
     ] {
         fs::write(app.context.env.home.join("config.toml"), content).unwrap();

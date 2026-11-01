@@ -121,7 +121,8 @@ fn unmanaged_difference_defaults_to_skip_and_replace_lists_extra_old_files() {
         &targets,
         &selection,
         &BTreeMap::new(),
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(skipped.groups[0].disposition, Disposition::Skipped);
     let decisions = BTreeMap::from([(TargetKey("one".into()), ConflictDecision::Replace)]);
     let replace = plan_distribution(&[p], &targets, &selection, &decisions).unwrap();
