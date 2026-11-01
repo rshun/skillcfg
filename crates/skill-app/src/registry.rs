@@ -66,6 +66,23 @@ pub struct RegistrySnapshot {
     pub selected_variants: BTreeMap<AgentId, String>,
 }
 
+pub struct AgentProfileView {
+    pub id: Option<AgentId>,
+    pub display_name: String,
+    pub source: &'static str,
+    pub state: ProfileState,
+    pub variants: Vec<String>,
+    pub current_variant: Option<String>,
+    pub roots: Vec<crate::roots::ResolvedRoot>,
+    pub issues: Vec<&'static str>,
+}
+
+impl crate::App {
+    pub fn list_agent_profiles(&self) -> Result<Vec<AgentProfileView>, AppError> {
+        Err(AppError { code: "not_implemented" })
+    }
+}
+
 pub fn approval_matches(approval: &Approval, entry: &ProfileEntry, env: &HostEnv) -> bool {
     approval.document == entry.raw
         && approval.platform == env.platform

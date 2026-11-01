@@ -8,6 +8,7 @@ use skill_core::{
 };
 use std::fs;
 use support::*;
+use skill_app::registry::builtin_profiles;
 
 #[test]
 fn embedded_profiles_use_the_same_validator_and_resolve_on_each_platform() {
@@ -57,6 +58,21 @@ fn fifth_standard_agent_is_loaded_from_json_only() {
         .iter()
         .any(|e| e.state == ProfileState::Enabled
             && e.profile.as_ref().unwrap().id.as_str() == "custom.fifth-agent"));
+}
+
+#[test]
+fn profile_listing_includes_pending_agents_without_scanning_roots() {
+    let env = env();
+    let source = source(&env, builtin_profiles());
+    fs::create_dir_all(&source.custom_dir).unwrap();
+    fs::write(source.custom_dir.join("fifth.json"), bytes(&profile("custom.fifth"))).unwrap();
+    let registry = load_registry(&source, &env).unwrap();
+    let views = app(env.clone(), registry, Scope::User).list_agent_profiles().unwrap();
+    let pending = views.iter().find(|v| v.id.as_ref().is_some_and(|id| id.as_str() == "custom.fifth")).unwrap();
+    assert_eq!(pending.state, ProfileState::Pending);
+    assert!(pending.roots.is_empty());
+    assert!(!env.home.join(".example").exists());
+    assert!(views.iter().any(|v| v.state == ProfileState::Builtin && !v.roots.is_empty()));
 }
 #[test]
 fn external_profile_edit_revokes_approval() {
@@ -117,6 +133,32 @@ fn paths_sizes_namespaces_and_variant_references_are_validated() {
     );
     let too_many = support::source(&env, vec![bytes(&profile("test")); 257]);
     assert!(load_registry(&too_many, &env).is_err());
+}
+
+#[test]
+fn profile_collection_limits_accept_boundary_and_reject_one_more() {
+    let mut p = profile("custom.limits");
+    p["variants"] = json!((0..8).map(|i| format!("v{i}")).collect::<Vec<_>>());
+    p["defaultVariant"] = json!("v0");
+    p["roots"] = json!((0..32).map(|i| root(&format!("r{i}"), "home", "user", &format!(".fixture/r{i}"), false)).collect::<Vec<_>>());
+    p["probes"] = json!((0..8).map(|i| json!({"probeId":format!("p{i}"),"base":"home","relative":"config.json","format":"json","keyPath":["enabled"],"expected":true,"onMissing":"unknown"})).collect::<Vec<_>>());
+    assert!(parse_agent_profile(&bytes(&p)).is_ok());
+    for field in ["variants", "roots", "probes"] {
+        let mut extra = p.clone();
+        let first = extra[field][0].clone();
+        extra[field].as_array_mut().unwrap().push(first);
+        assert!(parse_agent_profile(&bytes(&extra)).is_err());
+    }
+    let mut exact = bytes(&profile("custom.limits"));
+    exact.resize(MAX_PROFILE_BYTES, b' ');
+    assert!(parse_agent_profile(&exact).is_ok());
+    exact.push(b' ');
+    assert_eq!(parse_agent_profile(&exact).err().unwrap().code, "profile_too_large");
+    let deeply_nested = format!("{}0{}", "[".repeat(17), "]".repeat(17));
+    assert_eq!(parse_agent_profile(deeply_nested.as_bytes()).err().unwrap().code, "profile_too_deep");
+    let env = env();
+    let docs = (0..256).map(|i| bytes(&profile(&format!("agent-{i}")))).collect();
+    assert_eq!(load_registry(&source(&env, docs), &env).unwrap().entries.len(), 256);
 }
 #[test]
 fn variant_roots_are_static_and_other_variants_remain_possible_readers() {
