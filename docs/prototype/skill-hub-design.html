@@ -1,0 +1,324 @@
+<style>
+#skill-hub-design {
+  --sh-bg: light-dark(#f3f6fc,#171e2e); --sh-paper: light-dark(#ffffff,#20293b);
+  --sh-side: light-dark(#edf1f9,#1b2435); --sh-ink: light-dark(#253453,#e4eaf7);
+  --sh-sub: light-dark(#64718a,#a5b2cc); --sh-line: light-dark(#e0e6f1,#35415a);
+  --sh-blue: light-dark(#355af4,#9cb0ff); --sh-on-blue: light-dark(#ffffff,#182443);
+  --sh-tint: light-dark(#eaf0ff,#2d3c65); --sh-green: light-dark(#25785f,#87d8b5);
+  --sh-green-bg: light-dark(#eaf5f0,#203d36); --sh-amber: light-dark(#956116,#edc685);
+  --sh-amber-bg: light-dark(#fbf2df,#443923); --sh-code: light-dark(#f6f8fc,#182233);
+  font-family: "Segoe UI Variable Text","Microsoft YaHei UI","PingFang SC",sans-serif;
+  font-size:14px; line-height:1.55; color:var(--sh-ink); background:var(--sh-bg);
+  border:1px solid var(--sh-line); border-radius:16px; overflow:hidden; position:relative;
+  container-type:inline-size; text-align:left; font-weight:400;
+}
+#skill-hub-design * { box-sizing:border-box; }
+#skill-hub-design [hidden] { display:none !important; }
+#skill-hub-design button,#skill-hub-design input,#skill-hub-design select { font:inherit; }
+#skill-hub-design button { color:inherit; }
+#skill-hub-design button:disabled { opacity:.45; cursor:not-allowed; }
+#skill-hub-design h1,#skill-hub-design h2,#skill-hub-design h3,#skill-hub-design p { margin:0; }
+#skill-hub-design h1 { font-size:29px; font-weight:600; letter-spacing:-1px; line-height:1.35; }
+#skill-hub-design h2 { font-size:20px; font-weight:600; letter-spacing:-.45px; }
+#skill-hub-design h3 { font-size:14px; font-weight:600; }
+#skill-hub-design small { font-size:11px; }
+#skill-hub-design code,#skill-hub-design pre { font-family:"Cascadia Code","SFMono-Regular",Consolas,monospace; font-size:11px; }
+#skill-hub-design button:focus-visible,#skill-hub-design input:focus-visible,#skill-hub-design select:focus-visible { outline:3px solid var(--sh-blue); outline-offset:3px; }
+#skill-hub-design .sh-icon { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+#skill-hub-design .sh-icon svg { width:17px; height:17px; }
+#skill-hub-design .sh-titlebar { display:flex; align-items:center; justify-content:center; height:37px; background:var(--sh-side); border-bottom:1px solid var(--sh-line); color:var(--sh-sub); font-size:11px; letter-spacing:.1px; }
+#skill-hub-design .sh-layout { display:grid; grid-template-columns:166px minmax(0,1fr); min-height:755px; }
+#skill-hub-design .sh-sidebar { padding:28px 13px 18px; display:flex; flex-direction:column; background:var(--sh-side); gap:29px; border-right:1px solid var(--sh-line); }
+#skill-hub-design .sh-brand { display:flex; gap:10px; align-items:center; padding:0 7px; }
+#skill-hub-design .sh-brand-mark { width:31px; height:33px; position:relative; flex-shrink:0; }
+#skill-hub-design .sh-brand-mark b { position:absolute; width:23px; height:23px; border-radius:6px; border:2px solid var(--sh-blue); transform:rotate(-12deg); background:var(--sh-side); top:1px; left:1px; }
+#skill-hub-design .sh-brand-mark b+ b { top:8px; left:7px; transform:rotate(7deg); background:var(--sh-blue); }
+#skill-hub-design .sh-brand strong { font-size:20px; letter-spacing:-.8px; font-weight:650; white-space:nowrap; }
+#skill-hub-design .sh-brand small { display:block; margin-top:1px; color:var(--sh-sub); }
+#skill-hub-design .sh-nav { display:grid; gap:7px; }
+#skill-hub-design .sh-nav button { display:flex; align-items:center; gap:11px; background:transparent; padding:12px 11px; border:0; border-radius:8px; text-align:left; font-size:13px; min-height:44px; color:var(--sh-sub); }
+#skill-hub-design .sh-nav button[aria-current=page] { background:var(--sh-paper); color:var(--sh-blue); box-shadow:0 2px 5px light-dark(#26365c08,#00000013); font-weight:600; }
+#skill-hub-design .sh-count { margin-left:auto; font-size:11px; color:var(--sh-sub); }
+#skill-hub-design .sh-side-bottom { margin-top:auto; display:grid; gap:20px; }
+#skill-hub-design .sh-library-label { padding:12px 11px; border-top:1px solid var(--sh-line); }
+#skill-hub-design .sh-library-label span { display:block; color:var(--sh-sub); font-size:11px; margin-bottom:5px; }
+#skill-hub-design .sh-library-label b { font-size:12px; font-weight:500; display:flex; align-items:center; gap:7px; }
+#skill-hub-design .sh-side-foot { padding:0 11px; color:var(--sh-sub); font-size:11px; }
+#skill-hub-design .sh-main { min-width:0; }
+#skill-hub-design .sh-topbar { min-height:65px; border-bottom:1px solid var(--sh-line); display:flex; align-items:center; justify-content:space-between; padding:12px 27px; gap:15px; }
+#skill-hub-design .sh-breadcrumb { color:var(--sh-sub); font-size:12px; display:flex; align-items:center; gap:12px; }
+#skill-hub-design .sh-breadcrumb span:last-child { color:var(--sh-ink); }
+#skill-hub-design .sh-scope { display:flex; gap:6px; align-items:center; padding:3px; border:1px solid var(--sh-line); border-radius:8px; background:var(--sh-paper); }
+#skill-hub-design .sh-scope button { border:0; background:transparent; color:var(--sh-sub); font-size:11px; padding:6px 10px; border-radius:5px; white-space:nowrap; }
+#skill-hub-design .sh-scope button[aria-pressed=true] { background:var(--sh-tint); color:var(--sh-blue); }
+#skill-hub-design .sh-content { padding:27px; }
+#skill-hub-design .sh-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+#skill-hub-design .sh-heading p { color:var(--sh-sub); font-size:12px; margin-top:7px; }
+#skill-hub-design .sh-button { display:inline-flex; justify-content:center; align-items:center; gap:7px; background:var(--sh-paper); border:1px solid var(--sh-line); border-radius:7px; padding:9px 12px; font-size:12px; min-height:37px; white-space:nowrap; }
+#skill-hub-design .sh-button.sh-primary { background:var(--sh-blue); color:var(--sh-on-blue); border-color:var(--sh-blue); }
+#skill-hub-design .sh-button.sh-quiet { background:transparent; border-color:transparent; }
+#skill-hub-design .sh-toolbar { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:18px; }
+#skill-hub-design .sh-filters { display:flex; gap:19px; align-items:center; }
+#skill-hub-design .sh-filters button { padding:7px 0; background:transparent; border:0; border-bottom:2px solid transparent; color:var(--sh-sub); font-size:12px; white-space:nowrap; }
+#skill-hub-design .sh-filters button[aria-pressed=true] { color:var(--sh-ink); border-bottom-color:var(--sh-blue); }
+#skill-hub-design .sh-filters em { font-style:normal; font-size:10px; margin-left:5px; color:var(--sh-sub); }
+#skill-hub-design .sh-search { display:flex; align-items:center; gap:7px; width:166px; border-bottom:1px solid var(--sh-line); padding:6px 0; color:var(--sh-sub); }
+#skill-hub-design .sh-search input { border:0; background:transparent; color:var(--sh-ink); min-width:0; width:100%; font-size:12px; padding:0; }
+#skill-hub-design .sh-search input::placeholder { color:var(--sh-sub); }
+#skill-hub-design .sh-workspace { display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:18px; align-items:start; }
+#skill-hub-design .sh-list { background:var(--sh-paper); border:1px solid var(--sh-line); border-radius:11px; overflow:hidden; }
+#skill-hub-design .sh-list-head { display:flex; justify-content:space-between; padding:12px 15px; font-size:11px; color:var(--sh-sub); border-bottom:1px solid var(--sh-line); }
+#skill-hub-design .sh-skill { display:grid; grid-template-columns:34px minmax(0,1fr) 15px; gap:11px; text-align:left; align-items:start; width:100%; padding:17px 14px; border:0; border-bottom:1px solid var(--sh-line); background:transparent; position:relative; }
+#skill-hub-design .sh-skill:last-child { border-bottom:0; }
+#skill-hub-design .sh-skill[aria-pressed=true] { background:var(--sh-tint); }
+#skill-hub-design .sh-skill[aria-pressed=true]::before { content:""; width:3px; background:var(--sh-blue); position:absolute; top:13px; bottom:13px; left:0; border-radius:0 3px 3px 0; }
+#skill-hub-design .sh-skill-symbol { display:flex; align-items:center; justify-content:center; width:33px; height:37px; border:1px solid var(--sh-line); border-radius:7px 7px 11px 7px; color:var(--sh-sub); background:var(--sh-paper); }
+#skill-hub-design .sh-skill[aria-pressed=true] .sh-skill-symbol { color:var(--sh-blue); }
+#skill-hub-design .sh-skill-copy { min-width:0; }
+#skill-hub-design .sh-skill-title { font-size:13px; font-weight:600; display:block; margin-bottom:3px; overflow-wrap:anywhere; }
+#skill-hub-design .sh-skill-desc { color:var(--sh-sub); font-size:11px; display:block; }
+#skill-hub-design .sh-skill-meta { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:10px; }
+#skill-hub-design .sh-agent-letters { display:flex; gap:3px; }
+#skill-hub-design .sh-agent-letters span { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border:1px solid var(--sh-line); border-radius:5px; background:var(--sh-paper); color:var(--sh-sub); font-size:9px; font-weight:600; }
+#skill-hub-design .sh-state { display:inline-flex; align-items:center; gap:4px; color:var(--sh-sub); font-size:10px; }
+#skill-hub-design .sh-state.sh-changed { color:var(--sh-amber); }
+#skill-hub-design .sh-state.sh-good { color:var(--sh-green); }
+#skill-hub-design .sh-state::before { content:""; display:inline-block; height:5px; width:5px; border-radius:50%; background:currentColor; }
+#skill-hub-design .sh-chevron { color:var(--sh-sub); padding-top:9px; }
+#skill-hub-design .sh-inspector { background:var(--sh-paper); border:1px solid var(--sh-line); border-radius:11px; overflow:hidden; }
+#skill-hub-design .sh-detail-head { padding:20px 18px 17px; border-bottom:1px solid var(--sh-line); }
+#skill-hub-design .sh-detail-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:17px; }
+#skill-hub-design .sh-package { display:flex; width:40px; height:43px; justify-content:center; align-items:center; color:var(--sh-blue); background:var(--sh-tint); border-radius:9px 9px 15px 9px; }
+#skill-hub-design .sh-package svg { width:22px; height:22px; }
+#skill-hub-design .sh-chip { display:inline-flex; align-items:center; gap:4px; background:var(--sh-green-bg); color:var(--sh-green); font-size:10px; border-radius:4px; padding:3px 6px; }
+#skill-hub-design .sh-detail-head h2 { overflow-wrap:anywhere; font-size:19px; }
+#skill-hub-design .sh-detail-head p { font-size:11px; color:var(--sh-sub); margin-top:7px; line-height:1.8; }
+#skill-hub-design .sh-detail-section { padding:16px 18px; }
+#skill-hub-design .sh-section-title { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+#skill-hub-design .sh-section-title span { font-size:10px; color:var(--sh-sub); }
+#skill-hub-design .sh-target { display:flex; gap:9px; align-items:center; padding:9px 0; }
+#skill-hub-design .sh-target input { accent-color:var(--sh-blue); width:15px; height:15px; margin:0; flex-shrink:0; }
+#skill-hub-design .sh-agent-logo { display:flex; justify-content:center; align-items:center; width:26px; height:26px; border:1px solid var(--sh-line); border-radius:7px; color:var(--sh-ink); font-size:12px; font-weight:600; flex-shrink:0; }
+#skill-hub-design .sh-target-copy { flex:1; min-width:0; }
+#skill-hub-design .sh-target-copy b { font-size:12px; font-weight:500; display:block; }
+#skill-hub-design .sh-target-copy small { color:var(--sh-sub); font-size:10px; display:block; }
+#skill-hub-design .sh-target-copy small.sh-outdated { color:var(--sh-amber); }
+#skill-hub-design .sh-target-check { color:var(--sh-green); }
+#skill-hub-design .sh-note { margin-top:10px; padding:10px 11px; border-radius:6px; font-size:10px; background:var(--sh-code); color:var(--sh-sub); line-height:1.7; display:flex; gap:7px; align-items:start; }
+#skill-hub-design .sh-note .sh-icon { margin-top:2px; }
+#skill-hub-design .sh-note svg { width:13px; height:13px; }
+#skill-hub-design .sh-files { margin-top:14px; padding-top:14px; border-top:1px solid var(--sh-line); }
+#skill-hub-design .sh-files summary { display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--sh-sub); }
+#skill-hub-design .sh-files pre { color:var(--sh-sub); white-space:pre-wrap; line-height:1.8; margin:10px 0 0; overflow-wrap:anywhere; }
+#skill-hub-design .sh-bottom { display:flex; align-items:center; gap:12px; margin-top:22px; padding:14px 16px; background:var(--sh-paper); border:1px solid var(--sh-line); border-radius:9px; box-shadow:0 5px 15px light-dark(#23346206,#00000010); }
+#skill-hub-design .sh-bottom-mark { width:31px; height:31px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--sh-tint); color:var(--sh-blue); flex-shrink:0; }
+#skill-hub-design .sh-bottom-copy { flex:1; }
+#skill-hub-design .sh-bottom-copy b { font-size:12px; font-weight:600; display:block; }
+#skill-hub-design .sh-bottom-copy small { font-size:10px; color:var(--sh-sub); display:block; margin-top:2px; }
+#skill-hub-design .sh-footnote { display:flex; align-items:center; gap:6px; color:var(--sh-sub); font-size:10px; margin-top:14px; }
+#skill-hub-design .sh-demo { border:1px solid var(--sh-line); border-radius:4px; padding:1px 5px; margin-left:auto; white-space:nowrap; }
+#skill-hub-design .sh-empty { padding:40px 15px; text-align:center; color:var(--sh-sub); font-size:12px; }
+#skill-hub-design .sh-page-heading { margin-bottom:26px; }
+#skill-hub-design .sh-page-heading p { color:var(--sh-sub); margin-top:7px; font-size:12px; }
+#skill-hub-design .sh-agent-page { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+#skill-hub-design .sh-agent-panel { padding:21px; background:var(--sh-paper); border:1px solid var(--sh-line); border-radius:10px; min-width:0; }
+#skill-hub-design .sh-agent-panel header { display:flex; align-items:center; gap:10px; margin-bottom:17px; }
+#skill-hub-design .sh-agent-panel p { color:var(--sh-sub); font-size:12px; margin-bottom:12px; }
+#skill-hub-design .sh-agent-panel code { display:block; overflow-wrap:anywhere; color:var(--sh-sub); margin-bottom:15px; }
+#skill-hub-design .sh-history-row { border-bottom:1px solid var(--sh-line); padding:20px 0; display:flex; justify-content:space-between; gap:15px; }
+#skill-hub-design .sh-history-row p { color:var(--sh-sub); font-size:12px; margin-top:5px; }
+#skill-hub-design .sh-settings-row { display:flex; justify-content:space-between; gap:18px; align-items:center; padding:22px 0; border-bottom:1px solid var(--sh-line); }
+#skill-hub-design .sh-settings-row p { color:var(--sh-sub); font-size:12px; margin-top:5px; }
+#skill-hub-design .sh-setting-value { font-size:12px; color:var(--sh-sub); text-align:right; overflow-wrap:anywhere; }
+#skill-hub-design .sh-dialog { width:min(620px,calc(100% - 24px)); max-height:85dvh; border:1px solid var(--sh-line); border-radius:14px; padding:0; background:var(--sh-paper); color:var(--sh-ink); font:inherit; box-shadow:0 24px 90px #00000030; }
+#skill-hub-design .sh-dialog::backdrop { background:#1624425c; backdrop-filter:blur(3px); }
+#skill-hub-design .sh-dialog-head { display:flex; align-items:start; justify-content:space-between; padding:23px 25px 18px; border-bottom:1px solid var(--sh-line); }
+#skill-hub-design .sh-dialog-head p { margin-top:5px; color:var(--sh-sub); font-size:12px; }
+#skill-hub-design .sh-dialog-body { padding:20px 25px; }
+#skill-hub-design .sh-dialog-footer { padding:16px 25px; border-top:1px solid var(--sh-line); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+#skill-hub-design .sh-dialog-footer small { color:var(--sh-sub); font-size:11px; }
+#skill-hub-design .sh-preview-file { padding:14px 0; border-bottom:1px solid var(--sh-line); }
+#skill-hub-design .sh-preview-file b { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600; }
+#skill-hub-design .sh-preview-file code { display:block; color:var(--sh-sub); overflow-wrap:anywhere; margin-top:5px; }
+#skill-hub-design .sh-preview-file small { color:var(--sh-green); margin-left:auto; font-size:10px; font-weight:400; }
+#skill-hub-design .sh-diff { padding:11px; color:var(--sh-green); background:var(--sh-green-bg); border-radius:6px; font-size:11px; white-space:pre-wrap; line-height:1.8; margin-top:10px; }
+#skill-hub-design .sh-dialog-body .sh-note { font-size:11px; }
+#skill-hub-design .sh-import-row { display:flex; align-items:center; padding:13px 0; border-bottom:1px solid var(--sh-line); gap:11px; }
+#skill-hub-design .sh-import-row input { accent-color:var(--sh-blue); }
+#skill-hub-design .sh-import-row small { color:var(--sh-sub); display:block; margin-top:3px; }
+#skill-hub-design .sh-toast { position:absolute; top:48px; left:50%; transform:translateX(-50%); background:var(--sh-ink); color:var(--sh-paper); border-radius:7px; padding:10px 16px; z-index:3; font-size:12px; max-width:90%; box-shadow:0 4px 14px #00000020; }
+@container (max-width:850px) {
+  #skill-hub-design .sh-layout { grid-template-columns:64px minmax(0,1fr); }
+  #skill-hub-design .sh-sidebar { padding:25px 9px 18px; }
+  #skill-hub-design .sh-brand { padding:0 5px; }
+  #skill-hub-design .sh-brand>div:last-child,#skill-hub-design .sh-nav-label,#skill-hub-design .sh-count,#skill-hub-design .sh-library-label,#skill-hub-design .sh-side-foot { display:none; }
+  #skill-hub-design .sh-nav button { justify-content:center; padding:13px; }
+  #skill-hub-design .sh-content { padding:23px; }
+  #skill-hub-design .sh-workspace { grid-template-columns:minmax(0,1fr) 245px; gap:14px; }
+  #skill-hub-design .sh-topbar { padding:12px 23px; }
+}
+@container (max-width:650px) {
+  #skill-hub-design .sh-workspace { grid-template-columns:1fr; }
+  #skill-hub-design .sh-inspector { margin-top:4px; }
+  #skill-hub-design .sh-layout { min-height:0; }
+  #skill-hub-design .sh-heading { align-items:start; }
+  #skill-hub-design .sh-heading h1 { font-size:25px; }
+  #skill-hub-design .sh-heading p { max-width:200px; }
+  #skill-hub-design .sh-toolbar { flex-wrap:wrap; }
+  #skill-hub-design .sh-search { width:100%; }
+  #skill-hub-design .sh-bottom { flex-wrap:wrap; }
+  #skill-hub-design .sh-bottom .sh-button { flex:1; }
+  #skill-hub-design .sh-bottom-copy { min-width:150px; }
+  #skill-hub-design .sh-breadcrumb { display:none; }
+  #skill-hub-design .sh-topbar { justify-content:flex-start; }
+  #skill-hub-design .sh-agent-page { grid-template-columns:1fr; }
+  #skill-hub-design .sh-footnote { flex-wrap:wrap; }
+  #skill-hub-design .sh-demo { margin-left:0; }
+  #skill-hub-design .sh-settings-row { flex-wrap:wrap; }
+}
+@container (max-width:390px) {
+  #skill-hub-design .sh-layout { grid-template-columns:48px minmax(0,1fr); }
+  #skill-hub-design .sh-sidebar { padding:23px 4px; }
+  #skill-hub-design .sh-brand { padding:0; }
+  #skill-hub-design .sh-brand-mark { transform:scale(.85); }
+  #skill-hub-design .sh-content { padding:18px 13px; }
+  #skill-hub-design .sh-heading { flex-wrap:wrap; }
+  #skill-hub-design .sh-heading p { max-width:none; }
+  #skill-hub-design .sh-heading .sh-button { width:100%; }
+  #skill-hub-design .sh-topbar { padding:12px 13px; }
+  #skill-hub-design .sh-filters { gap:12px; }
+}
+@media (pointer:coarse) { #skill-hub-design button,#skill-hub-design .sh-target { min-height:44px; } #skill-hub-design .sh-search input { font-size:16px; } }
+@media (prefers-reduced-motion:no-preference) { #skill-hub-design .sh-button { transition:filter .15s; } #skill-hub-design .sh-button:hover { filter:brightness(.96); } }
+</style>
+<div id="skill-hub-design" aria-label="Skill Hub 界面设计">
+  <div class="sh-titlebar">Skill Hub <span style="margin:0 8px;opacity:.4">/</span> 你的 Agent，共用一份好方法</div>
+  <div class="sh-layout">
+    <aside class="sh-sidebar">
+      <div class="sh-brand"><div class="sh-brand-mark" aria-hidden="true"><b></b><b></b></div><div><strong>Skill Hub</strong><small>让经验在 Agent 间流动</small></div></div>
+      <nav class="sh-nav" aria-label="主导航">
+        <button class="cursor-interaction" data-page="library" aria-label="我的 Skills" aria-current="page"><span class="sh-icon"><i data-lucide="layers" aria-hidden="true"></i></span><span class="sh-nav-label">我的 Skills</span><span class="sh-count" id="sh-library-count">6</span></button>
+        <button class="cursor-interaction" data-page="agents" aria-label="Agents"><span class="sh-icon"><i data-lucide="boxes" aria-hidden="true"></i></span><span class="sh-nav-label">Agents</span><span class="sh-count">4</span></button>
+        <button class="cursor-interaction" data-page="history" aria-label="变更历史"><span class="sh-icon"><i data-lucide="history" aria-hidden="true"></i></span><span class="sh-nav-label">变更历史</span></button>
+      </nav>
+      <div class="sh-side-bottom">
+        <div class="sh-library-label"><span>当前 Skill 库</span><b><span class="sh-icon"><i data-lucide="folder-open" aria-hidden="true"></i></span>个人工作库</b></div>
+        <nav class="sh-nav" aria-label="软件设置"><button class="cursor-interaction" data-page="settings" aria-label="软件设置"><span class="sh-icon"><i data-lucide="settings-2" aria-hidden="true"></i></span><span class="sh-nav-label">软件设置</span></button></nav>
+        <div class="sh-side-foot">本机管理 <span style="float:right">设计预览</span></div>
+      </div>
+    </aside>
+    <main class="sh-main">
+      <header class="sh-topbar"><div class="sh-breadcrumb"><span>个人工作库</span><span>/</span><span id="sh-current-page">我的 Skills</span></div><div class="sh-scope" aria-label="配置范围"><button class="cursor-interaction" data-scope="user" aria-pressed="true">全局配置</button><button class="cursor-interaction" data-scope="project" aria-pressed="false">项目配置</button></div></header>
+      <div class="sh-content">
+        <section id="sh-library-page">
+          <div class="sh-heading"><div><h1>我的 Skills</h1><p>把好用的工作方法，带到每一个 Agent。</p></div><button class="sh-button sh-primary cursor-interaction" data-action="import"><span class="sh-icon"><i data-lucide="plus" aria-hidden="true"></i></span>导入 Skill</button></div>
+          <div class="sh-toolbar"><div class="sh-filters" aria-label="Skill 筛选"><button class="cursor-interaction" data-filter="all" aria-pressed="true">全部 <em id="sh-all-count">6</em></button><button class="cursor-interaction" data-filter="outdated" aria-pressed="false">待更新 <em id="sh-outdated-count">2</em></button><button class="cursor-interaction" data-filter="new" aria-pressed="false">未分发 <em id="sh-new-count">1</em></button></div><label class="sh-search"><span class="sh-icon"><i data-lucide="search" aria-hidden="true"></i></span><input id="sh-search" aria-label="搜索 Skill" placeholder="搜索 Skill" type="search"></label></div>
+          <div class="sh-workspace"><div class="sh-list"><div class="sh-list-head"><span>Skill 与工作方法</span><span>分发状态</span></div><div id="sh-skills"></div></div><aside class="sh-inspector" id="sh-inspector" aria-label="Skill 详情与分发目标"></aside></div>
+          <div class="sh-bottom" aria-live="polite"><span class="sh-bottom-mark sh-icon"><i data-lucide="list-checks" aria-hidden="true"></i></span><div class="sh-bottom-copy"><b id="sh-selection-title">1 个 Skill，2 个 Agent</b><small id="sh-selection-sub">已选择 2 组分发目标，尚未应用</small></div><button class="sh-button sh-quiet cursor-interaction" data-action="clear">清空</button><button class="sh-button sh-primary cursor-interaction" id="sh-preview-button" data-action="preview">预览变更<span class="sh-icon"><i data-lucide="arrow-up-right" aria-hidden="true"></i></span></button></div>
+          <div class="sh-footnote"><span class="sh-icon"><i data-lucide="shield-check" aria-hidden="true"></i></span><span>始终由你确认。更新 Skill 库不会自动分发。</span><span class="sh-demo">演示数据</span></div>
+        </section>
+        <section id="sh-agents-page" hidden><div class="sh-page-heading"><h1>Agents</h1><p>查看已有 Skills，把需要的工作方法带回库中。</p></div><div class="sh-agent-page" id="sh-agent-cards"></div></section>
+        <section id="sh-history-page" hidden><div class="sh-page-heading"><h1>变更历史</h1><p>每一次应用都有迹可循，恢复前同样需要确认。</p></div><div id="sh-history-list"></div></section>
+        <section id="sh-settings-page" hidden><div class="sh-page-heading"><h1>软件设置</h1><p>配置你的工作库和写入偏好。</p></div><div class="sh-settings-row"><div><h3>个人工作库</h3><p>导入后的 Skills 统一保存在这里。</p></div><code class="sh-setting-value">~/.skill-hub/library/</code></div><div class="sh-settings-row"><div><h3>应用方式</h3><p>先预览，明确确认后才写入目标 Agent。</p></div><span class="sh-chip">手动应用</span></div><div class="sh-settings-row"><div><h3>写入前备份</h3><p>保存目标原有内容，用于核对和恢复。</p></div><span class="sh-chip">始终开启</span></div><div class="sh-settings-row"><div><h3>同名 Skill</h3><p>在预览中解决冲突后再应用。</p></div><span class="sh-setting-value">默认跳过</span></div><div class="sh-note"><span class="sh-icon"><i data-lucide="info" aria-hidden="true"></i></span><span>这是界面设计预览。操作只改变演示数据。</span></div></section>
+      </div>
+    </main>
+  </div>
+  <div class="sh-toast" id="sh-toast" role="status" hidden></div>
+  <dialog class="sh-dialog" id="sh-dialog" aria-labelledby="sh-dialog-title"><div class="sh-dialog-head"><div><h2 id="sh-dialog-title">预览变更</h2><p id="sh-dialog-sub">确认路径与文件变化后，再应用到 Agent。</p></div><button class="sh-button sh-quiet cursor-interaction" data-action="close" aria-label="关闭对话框"><span class="sh-icon"><i data-lucide="x" aria-hidden="true"></i></span></button></div><div class="sh-dialog-body" id="sh-dialog-body"></div><div class="sh-dialog-footer"><small id="sh-dialog-hint">演示操作，不会写入真实文件</small><div style="display:flex;gap:8px"><button class="sh-button cursor-interaction" data-action="close">返回</button><button class="sh-button sh-primary cursor-interaction" id="sh-dialog-confirm">确认应用</button></div></div></dialog>
+</div>
+<script>
+(() => {
+  const root = document.getElementById('skill-hub-design');
+  const q = selector => root.querySelector(selector);
+  const qa = selector => [...root.querySelectorAll(selector)];
+  const icon = name => '<span class="sh-icon"><i data-lucide="'+name+'" aria-hidden="true"></i></span>';
+  const agents = [
+    {id:'codex',name:'Codex',letter:'C',user:'~/.agents/skills/',project:'.agents/skills/'},
+    {id:'claude',name:'Claude Code',letter:'✳',user:'~/.claude/skills/',project:'.claude/skills/'},
+    {id:'antigravity',name:'Antigravity',letter:'A',user:'~/.gemini/config/skills/',project:'.agents/skills/'},
+    {id:'grok',name:'Grok',letter:'G',user:'~/.grok/skills/',project:'.grok/skills/'}
+  ];
+  const skills = [
+    {id:'code-review',name:'代码审查',desc:'检查代码变更，先发现真正影响质量的问题。',icon:'scan-line',files:4,status:{codex:'outdated',claude:'ok',antigravity:'absent',grok:'ok'},source:'Claude Code',tree:'SKILL.md\nreferences/\n  review-checklist.md\n  severity-guide.md\nscripts/\n  check-diff.py'},
+    {id:'frontend-design',name:'前端设计',desc:'设计有辨识度、细节完整的产品界面。',icon:'panels-top-left',files:3,status:{codex:'ok',claude:'ok',antigravity:'ok',grok:'absent'},source:'Claude Code',tree:'SKILL.md\nreferences/\n  design-principles.md\n  layout-patterns.md'},
+    {id:'systematic-debugging',name:'系统化排障',desc:'从证据定位原因，按步骤验证修复。',icon:'bug',files:6,status:{codex:'outdated',claude:'ok',antigravity:'absent',grok:'absent'},source:'Codex',tree:'SKILL.md\nreferences/\n  root-cause-tracing.md\n  evidence-checklist.md\n  verification-guide.md\nscripts/\n  collect-context.py\nexamples/\n  diagnosis.md'},
+    {id:'release-check',name:'发布检查',desc:'发布前核对版本、变更与构建产物。',icon:'package-check',files:2,status:{codex:'ok',claude:'absent',antigravity:'absent',grok:'ok'},source:'Grok',tree:'SKILL.md\nreferences/\n  release-checklist.md'},
+    {id:'knowledge-search',name:'知识检索',desc:'先查已有经验，让每次判断都有出处。',icon:'book-open',files:3,status:{codex:'ok',claude:'ok',antigravity:'absent',grok:'ok'},source:'Codex',tree:'SKILL.md\nreferences/\n  citation-format.md\n  query-examples.md'},
+    {id:'writing-plans',name:'编写实施计划',desc:'把目标拆成可以执行和验证的小步骤。',icon:'notebook-pen',files:2,status:{codex:'absent',claude:'absent',antigravity:'absent',grok:'absent'},source:'本地目录',tree:'SKILL.md\ntemplates/\n  implementation-plan.md'}
+  ];
+  const imported = {id:'test-driven-development',name:'测试驱动开发',desc:'先写失败测试，再完成最小实现。',icon:'flask-conical',files:3,status:{codex:'absent',claude:'ok',antigravity:'absent',grok:'absent'},source:'Claude Code',tree:'SKILL.md\nreferences/\n  red-green-refactor.md\n  testing-patterns.md'};
+  let selectedSkill = 'code-review', filter = 'all', scope = 'user', page = 'library';
+  const selected = new Set(['code-review::codex','code-review::antigravity']);
+  const history = [];
+  let dialogMode = null, preview = null, toastTimer;
+  const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const outdated = skill => Object.values(skill.status).includes('outdated');
+  const isNew = skill => Object.values(skill.status).every(s=>s==='absent');
+  function icons(){ if(globalThis.lucide) globalThis.lucide.createIcons({attrs:{width:17,height:17}}); }
+  function toast(message) { clearTimeout(toastTimer); q('#sh-toast').textContent=message; q('#sh-toast').hidden=false; toastTimer=setTimeout(()=>q('#sh-toast').hidden=true,4200); }
+  function pairList(){return [...selected].map(pair=>{const [id,agentId]=pair.split('::');return {skill:skills.find(s=>s.id===id),agent:agents.find(a=>a.id===agentId)};});}
+  function saveState(){const api=window.openai;if(api?.setWidgetState)api.setWidgetState({modelContent:{design:'Skill Hub 钴蓝工作台',application:'预览后手动应用'},privateContent:{selectedSkill,scope,page,selected:[...selected]}}).catch(()=>{});}
+  function restoreState(state){if(!state?.privateContent)return;const saved=state.privateContent;if(skills.some(s=>s.id===saved.selectedSkill))selectedSkill=saved.selectedSkill;if(['user','project'].includes(saved.scope))scope=saved.scope;if(['library','agents','history','settings'].includes(saved.page))page=saved.page;if(Array.isArray(saved.selected)){selected.clear();saved.selected.forEach(p=>{const [id,a]=String(p).split('::');if(skills.some(s=>s.id===id)&&agents.some(x=>x.id===a))selected.add(p);});}}
+  function renderList(){
+    const search=q('#sh-search').value.toLowerCase();
+    const list=skills.filter(s=>(filter==='all'||filter==='outdated'&&outdated(s)||filter==='new'&&isNew(s))&&[s.id,s.name,s.desc].join(' ').toLowerCase().includes(search));
+    q('#sh-skills').innerHTML=list.map(s=>{
+      const count=Object.values(s.status).filter(v=>v!=='absent').length;
+      const state=outdated(s)?'<span class="sh-state sh-changed">有更新待应用</span>':isNew(s)?'<span class="sh-state">尚未分发</span>':'<span class="sh-state sh-good">内容一致</span>';
+      return '<button class="sh-skill cursor-interaction" data-skill="'+s.id+'" aria-pressed="'+(s.id===selectedSkill)+'"><span class="sh-skill-symbol">'+icon(s.icon)+'</span><span class="sh-skill-copy"><span class="sh-skill-title">'+s.name+'</span><span class="sh-skill-desc">'+s.desc+'</span><span class="sh-skill-meta"><span class="sh-agent-letters" aria-label="已分发到 '+count+' 个 Agent">'+agents.filter(a=>s.status[a.id]!=='absent').map(a=>'<span data-tooltip="'+a.name+'">'+a.letter+'</span>').join('')+'</span>'+state+'</span></span><span class="sh-chevron">'+icon('chevron-right')+'</span></button>';
+    }).join('') || '<div class="sh-empty">没有匹配的 Skill。试试其他名称。</div>';
+    q('#sh-all-count').textContent=skills.length;q('#sh-library-count').textContent=skills.length;
+    q('#sh-outdated-count').textContent=skills.filter(outdated).length;q('#sh-new-count').textContent=skills.filter(isNew).length;
+  }
+  function renderInspector(){
+    const s=skills.find(s=>s.id===selectedSkill);
+    q('#sh-inspector').innerHTML='<div class="sh-detail-head"><div class="sh-detail-top"><span class="sh-package">'+icon(s.icon)+'</span><span class="sh-chip">'+icon('folder-check')+'完整目录</span></div><h2>'+s.name+'</h2><p>'+s.id+'<br>来源 '+s.source+'，包含 '+s.files+' 个文件。</p></div><div class="sh-detail-section"><div class="sh-section-title"><h3>这次应用到</h3><span>逐项选择</span></div>'+agents.map(a=>'<label class="sh-target cursor-interaction"><input type="checkbox" data-target="'+a.id+'" '+(selected.has(s.id+'::'+a.id)?'checked':'')+'><span class="sh-agent-logo">'+a.letter+'</span><span class="sh-target-copy"><b>'+a.name+'</b><small class="'+(s.status[a.id]==='outdated'?'sh-outdated':'')+'">'+({ok:'已配置，内容一致',outdated:'已有版本，待更新',absent:'尚未配置'})[s.status[a.id]]+'</small></span>'+(s.status[a.id]==='ok'?'<span class="sh-target-check">'+icon('check')+'</span>':'')+'</label>').join('')+'<div class="sh-note">'+icon('info')+'<span>'+(scope==='project'?'Codex 与 Antigravity 共用项目目录，Grok 也可能读取。预览将列出影响范围。':'Grok 默认也可能读取 Claude 与共享目录。预览将说明实际影响范围。')+'</span></div><details class="sh-files"><summary><span>随 Skill 分发的文件</span><span>'+s.files+' 个</span></summary><pre>'+s.tree+'</pre></details></div>';
+  }
+  function renderSelection(){const pairs=pairList();q('#sh-selection-title').textContent=pairs.length?new Set(pairs.map(p=>p.skill.id)).size+' 个 Skill，'+new Set(pairs.map(p=>p.agent.id)).size+' 个 Agent':'还没有选择分发目标';q('#sh-selection-sub').textContent=pairs.length?'已选择 '+pairs.length+' 组分发目标，尚未应用':'选中 Skill 后，在右侧勾选目标 Agent';q('#sh-preview-button').disabled=!pairs.length;}
+  function renderAgents(){q('#sh-agent-cards').innerHTML=agents.map(a=>'<article class="sh-agent-panel"><header><span class="sh-agent-logo">'+a.letter+'</span><h2>'+a.name+'</h2></header><p>已发现 '+skills.filter(s=>s.status[a.id]!=='absent').length+' 个示例 Skill</p><code>'+a[scope]+'</code><button class="sh-button cursor-interaction" data-action="import" data-agent="'+a.id+'">查看与导入'+icon('chevron-right')+'</button></article>').join('');}
+  function renderHistory(){q('#sh-history-list').innerHTML=history.length?history.map(h=>'<div class="sh-history-row"><div><h3>'+h.title+'</h3><p>'+h.desc+'</p></div><span class="sh-chip">演示完成</span></div>').join(''):'<div class="sh-empty">还没有应用记录。预览并模拟应用后，记录会出现在这里。</div>';}
+  function render(){renderList();renderInspector();renderSelection();renderAgents();renderHistory();qa('[data-page]').forEach(b=>{if(b.dataset.page===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});['library','agents','history','settings'].forEach(id=>q('#sh-'+id+'-page').hidden=id!==page);qa('[data-scope]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scope===scope)));qa('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.filter===filter)));q('#sh-current-page').textContent={library:'我的 Skills',agents:'Agents',history:'变更历史',settings:'软件设置'}[page];applyDesign();icons();}
+  function sampleDiff(item){
+    if(item.agents.every(a=>item.skill.status[a.id]==='ok'))return '内容与工作库一致，本次不写入。';
+    if(item.agents.some(a=>item.skill.status[a.id]==='outdated'))return 'SKILL.md（差异示例）\n- description: '+item.skill.name+'的基础工作流程。\n+ description: '+item.skill.desc+'\n\n其余文件保持不变。';
+    return '新增目录（文件示例）\n'+item.skill.tree.split('\n').map(l=>'+ '+l).join('\n');
+  }
+  function closeDialog(){q('#sh-dialog').close();preview=null;dialogMode=null;}
+  function openPreview(){
+    preview=pairList().map(p=>({id:p.skill.id,agentId:p.agent.id}));dialogMode='preview';
+    const writes=new Map();pairList().forEach(({skill,agent})=>{const path=(scope==='project'?'示例项目/':'')+agent[scope]+skill.id+'/';if(!writes.has(path))writes.set(path,{skill,agents:[],path});writes.get(path).agents.push(agent);});
+    q('#sh-dialog-title').textContent='预览变更';q('#sh-dialog-sub').textContent=scope==='user'?'全局配置：核对目标目录和随 Skill 分发的文件。':'项目配置：演示项目目录，不会使用真实工作目录。';
+    q('#sh-dialog-body').innerHTML=[...writes.values()].map(w=>'<div class="sh-preview-file"><b>'+icon('folder')+w.agents.map(a=>a.name).join('、')+'<small>'+w.skill.files+' 个文件</small></b><code>'+escape(w.path)+'</code><details><summary style="font-size:11px;margin-top:10px;color:var(--sh-sub)">查看文件变化</summary><pre class="sh-diff">'+escape(sampleDiff(w))+'</pre></details></div>').join('')+'<div class="sh-note">'+icon('info')+'<span>'+(scope==='project'?'写入 .agents/skills 的内容可被 Codex、Antigravity 和 Grok 读取。相同目录只生成一次写入。':'Grok 默认兼容读取 .agents/skills 与 .claude/skills；请核对其实际启用的兼容设置。')+'</span></div><div class="sh-note">'+icon('shield-check')+'<span>正式应用时先备份。预览后源内容或目标变化，需要重新预览。</span></div>';
+    q('#sh-dialog-confirm').textContent='模拟确认应用';q('#sh-dialog-confirm').disabled=false;q('#sh-dialog-hint').textContent=writes.size+' 个示例目录，真实文件不会改变';q('#sh-dialog').showModal();icons();
+  }
+  function openImport(agentId){
+    dialogMode='import';preview=null;const agent=agents.find(a=>a.id===agentId)||agents[1];
+    q('#sh-dialog-title').textContent='从 Agent 导入';q('#sh-dialog-sub').textContent='查看 '+agent.name+' 的示例 Skills，选择后保存到工作库。';
+    q('#sh-dialog-body').innerHTML='<label class="sh-import-row"><input type="checkbox" id="sh-import-choice" checked '+(skills.some(s=>s.id===imported.id)?'disabled':'')+'><span><b>'+imported.name+'</b><small>'+imported.id+' / '+(skills.some(s=>s.id===imported.id)?'已在库中，默认跳过':'3 个文件，包含引用资料')+'</small></span></label><div class="sh-note">'+icon('folder-open')+'<span>来源示例：'+escape(agent[scope])+imported.id+'/。此操作只演示导入，不读取本机文件。</span></div>';
+    q('#sh-dialog-confirm').textContent='模拟导入到库';q('#sh-dialog-confirm').disabled=skills.some(s=>s.id===imported.id);q('#sh-dialog-hint').textContent='导入后再选择分发目标';q('#sh-dialog').showModal();icons();
+  }
+  root.addEventListener('click',e=>{
+    const nav=e.target.closest('[data-page]');if(nav){page=nav.dataset.page;render();saveState();return;}
+    const skill=e.target.closest('[data-skill]');if(skill){selectedSkill=skill.dataset.skill;render();saveState();return;}
+    const filterButton=e.target.closest('[data-filter]');if(filterButton){filter=filterButton.dataset.filter;render();return;}
+    const scopeButton=e.target.closest('[data-scope]');if(scopeButton&&scope!==scopeButton.dataset.scope){scope=scopeButton.dataset.scope;selected.clear();preview=null;render();toast(scope==='project'?'已切换到示例项目，请重新选择目标。':'已切换到全局配置，请重新选择目标。');saveState();return;}
+    const action=e.target.closest('[data-action]')?.dataset.action;
+    if(action==='preview')openPreview();if(action==='clear'){selected.clear();render();saveState();}if(action==='close')closeDialog();if(action==='import')openImport(e.target.closest('[data-agent]')?.dataset.agent);
+  });
+  root.addEventListener('change',e=>{if(e.target.matches('[data-target]')){const key=selectedSkill+'::'+e.target.dataset.target;if(e.target.checked)selected.add(key);else selected.delete(key);preview=null;renderSelection();saveState();}if(e.target.id==='sh-import-choice')q('#sh-dialog-confirm').disabled=!e.target.checked;});
+  q('#sh-search').addEventListener('input',()=>{renderList();icons();});
+  q('#sh-dialog').addEventListener('close',()=>{dialogMode=null;preview=null;});
+  q('#sh-dialog-confirm').addEventListener('click',()=>{
+    if(dialogMode==='import'){if(!q('#sh-import-choice')?.checked)return;if(!skills.some(s=>s.id===imported.id))skills.push({...imported,status:{...imported.status}});selectedSkill=imported.id;page='library';filter='all';q('#sh-search').value='';closeDialog();render();toast('已模拟导入到库。选择目标后，再预览应用。');saveState();return;}
+    if(dialogMode!=='preview'||!preview)return;
+    const pairs=preview.map(p=>({...p}));pairs.forEach(({id,agentId})=>{const s=skills.find(s=>s.id===id);s.status[agentId]='ok';if(scope==='project'&&['codex','antigravity'].includes(agentId)){s.status.codex='ok';s.status.antigravity='ok';s.status.grok='ok';}});
+    history.unshift({title:'手动应用 '+new Set(pairs.map(p=>p.id)).size+' 个 Skill',desc:pairs.length+' 组目标，已模拟保存备份与写入。实际加载状态需在目标 Agent 核对。'});
+    selected.clear();closeDialog();render();toast('演示应用完成，真实 Agent 文件未改变。');saveState();
+  });
+  const design={density:'舒适',radius:11};
+  function applyDesign(){root.style.setProperty('--sh-list-radius',design.radius+'px');qa('.sh-skill').forEach(row=>row.style.paddingBlock=design.density==='紧凑'?'12px':'17px');qa('.sh-list,.sh-inspector').forEach(el=>el.style.borderRadius=design.radius+'px');}
+  restoreState(window.openai?.widgetState);render();
+  window.addEventListener('openai:set_globals',e=>{if(e.detail?.globals?.widgetState){restoreState(e.detail.globals.widgetState);render();}});
+  if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:applyDesign});tweak.addSelect(design,'density',{label:'列表密度',options:['舒适','紧凑']});tweak.addSlider(design,'radius',{label:'面板圆角',min:4,max:16,step:1,unit:'px'});}
+})();
+</script>
