@@ -3,6 +3,39 @@ use service_support::*;
 use skill_app::*;
 use skill_core::plan::PackageId;
 use std::fs;
+
+#[test]
+fn newer_revision_invalidates_older_edit_even_when_old_tree_is_unchanged() {
+    let (app, source, library, _) = ready();
+    let id = import(&app, &source, &library);
+    let older = app.read_package(&PackageId(id.clone())).unwrap();
+    let newer = app.read_package(&PackageId(id.clone())).unwrap();
+    app.save_skill_document(EditDocumentRequest {
+        package_id: PackageId(id.clone()),
+        edit_token: newer.edit_token.unwrap(),
+        document: newer.document.unwrap().replace("Review fixture.", "New description."),
+    }).unwrap();
+    assert!(app.save_skill_document(EditDocumentRequest {
+        package_id: PackageId(id.clone()),
+        edit_token: older.edit_token.unwrap(),
+        document: older.document.unwrap(),
+    }).is_err());
+    assert_eq!(app.load_library(&library).unwrap().records[0].description, "New description.");
+}
+
+#[test]
+fn editing_keeps_complete_previous_revision_in_central_backup() {
+    let (app, source, library, _) = ready();
+    fs::write(source.join("asset.bin"), [0, 255, 23]).unwrap();
+    let id = import(&app, &source, &library);
+    let view = app.read_package(&PackageId(id.clone())).unwrap();
+    let receipt = app.save_skill_document(EditDocumentRequest {
+        package_id: PackageId(id),
+        edit_token: view.edit_token.unwrap(),
+        document: view.document.unwrap().replace("Review fixture.", "New description."),
+    }).unwrap();
+    assert_eq!(fs::read(std::path::Path::new(&receipt.backup_location).join("retained/0/asset.bin")).unwrap(), vec![0, 255, 23]);
+}
 #[test]
 fn missing_library_is_first_use_not_created() {
     let (app, _, library, _) = ready();

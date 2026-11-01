@@ -1,13 +1,13 @@
 //! Host-independent application services. Stage one is read-only.
 pub mod detect;
 pub mod env;
+mod importing;
+mod library;
+mod preview;
 pub mod registry;
 pub mod roots;
 pub mod service;
-mod preview;
 mod settings;
-mod library;
-mod importing;
 pub use service::*;
 
 pub use env::HostEnv;

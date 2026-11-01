@@ -3,10 +3,7 @@ use skill_core::{
     plan::{ConflictDecision, PackageId, SelectionPair, TargetKey},
     AgentId, Scope,
 };
-use std::{
-    collections::BTreeMap,
-    path::PathBuf,
-};
+use std::{collections::BTreeMap, path::PathBuf};
 
 pub trait Clock: Send + Sync {
     fn now(&self) -> u64;
@@ -153,13 +150,55 @@ pub struct ProfileEnableRequest {
     pub expected_revision: String,
 }
 impl App {
-    pub fn preview_distribution(&self,_req:DistributionRequest)->Result<PreviewDto,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn commit_distribution(&self,_id:&str)->Result<ReceiptDto,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn list_history(&self)->Result<Vec<ReceiptDto>,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn list_recoveries(&self)->Result<Vec<skill_io::RecoveryRecord>,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn preview_restore(&self,_id:&str)->Result<PreviewDto,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn commit_restore(&self,_id:&str)->Result<ReceiptDto,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn preview_agent_profile(&self,_req:ProfileChangeRequest)->Result<ProfilePreviewDto,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn commit_agent_profile(&self,_id:&str)->Result<ReceiptDto,AppError>{Err(AppError{code:"not_implemented"})}
-    pub fn set_agent_profile_enabled(&self,_req:ProfileEnableRequest)->Result<ReceiptDto,AppError>{Err(AppError{code:"not_implemented"})}
+    pub fn preview_distribution(&self, _req: DistributionRequest) -> Result<PreviewDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn commit_distribution(&self, _id: &str) -> Result<ReceiptDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn list_history(&self) -> Result<Vec<ReceiptDto>, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn list_recoveries(&self) -> Result<Vec<skill_io::RecoveryRecord>, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn preview_restore(&self, _id: &str) -> Result<PreviewDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn commit_restore(&self, _id: &str) -> Result<ReceiptDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn preview_agent_profile(
+        &self,
+        _req: ProfileChangeRequest,
+    ) -> Result<ProfilePreviewDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn commit_agent_profile(&self, _id: &str) -> Result<ReceiptDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
+    pub fn set_agent_profile_enabled(
+        &self,
+        _req: ProfileEnableRequest,
+    ) -> Result<ReceiptDto, AppError> {
+        Err(AppError {
+            code: "not_implemented",
+        })
+    }
 }
