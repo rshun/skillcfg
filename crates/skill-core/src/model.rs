@@ -1,14 +1,29 @@
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "String", into = "String")]
 pub struct AgentId(pub(crate) String);
 
 impl AgentId {
-    pub fn parse(_value: &str) -> Result<Self, crate::CoreError> {
-        Err(crate::CoreError::new("not_implemented"))
+    pub fn parse(value: &str) -> Result<Self, crate::CoreError> {
+        if value.len() > 64 || !value.split('.').all(crate::package::is_slug) {
+            return Err(crate::CoreError::new("invalid_agent_id"));
+        }
+        Ok(Self(value.to_owned()))
     }
 
     pub fn as_str(&self) -> &str {
         &self.0
     }
+}
+
+impl TryFrom<String> for AgentId {
+    type Error = crate::CoreError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::parse(&value)
+    }
+}
+
+impl From<AgentId> for String {
+    fn from(value: AgentId) -> Self { value.0 }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]

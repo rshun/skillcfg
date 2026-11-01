@@ -1,5 +1,6 @@
 //! Pure Skill package validation, profile rules and distribution planning.
 pub mod error;
+pub mod compatibility;
 pub mod model;
 pub mod package;
 
