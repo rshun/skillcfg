@@ -1,0 +1,13 @@
+[package]
+name = "skill-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+skill-core = { path = "../skill-core" }
+skill-io = { path = "../skill-io" }
+serde_json.workspace = true
+toml_edit.workspace = true
+thiserror.workspace = true
