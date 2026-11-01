@@ -1,1 +1,4 @@
-fn main(){eprintln!("not_implemented");std::process::exit(1);}
+fn main() {
+    eprintln!("not_implemented");
+    std::process::exit(1);
+}

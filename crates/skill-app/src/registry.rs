@@ -67,6 +67,7 @@ pub struct RegistrySnapshot {
 }
 
 pub struct AgentProfileView {
+    pub revision: Option<String>,
     pub id: Option<AgentId>,
     pub display_name: String,
     pub source: &'static str,
@@ -82,6 +83,7 @@ impl crate::App {
         let mut views = Vec::new();
         for entry in &self.context.registry.entries {
             let mut view = AgentProfileView {
+                revision: None,
                 id: entry.profile.as_ref().map(|p| p.id.clone()),
                 display_name: entry
                     .profile

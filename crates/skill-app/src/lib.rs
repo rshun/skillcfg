@@ -4,6 +4,10 @@ pub mod env;
 pub mod registry;
 pub mod roots;
 pub mod service;
+mod preview;
+mod settings;
+mod library;
+mod importing;
 pub use service::*;
 
 pub use env::HostEnv;
@@ -36,5 +40,12 @@ pub struct AppContext {
 }
 pub struct App {
     pub context: AppContext,
+    pub(crate) state: std::cell::RefCell<preview::Session>,
+    pub(crate) clock: std::sync::Arc<dyn Clock>,
+    pub(crate) source: RegistrySource,
 }
-impl App { pub fn new(context:AppContext)->Self{Self{context}} }
+impl App {
+    pub fn new(context: AppContext) -> Self {
+        Self::with_clock(context, std::sync::Arc::new(SystemClock))
+    }
+}
