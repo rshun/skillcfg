@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "id": "grok",
+  "displayName": "Grok Build",
+  "packageFormat": "skill-md-v1",
+  "variants": [
+    "default"
+  ],
+  "defaultVariant": "default",
+  "roots": [
+    {
+      "rootId": "user-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".grok/skills",
+      "discovery": "children",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "project-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".grok/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "user-shared",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".agents/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100
+    },
+    {
+      "rootId": "project-shared",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".agents/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100
+    },
+    {
+      "rootId": "user-claude",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".claude/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "readEvidence": {
+        "kind": "bool-config-v1",
+        "probeId": "claude-compat"
+      }
+    },
+    {
+      "rootId": "project-claude",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".claude/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "readEvidence": {
+        "kind": "bool-config-v1",
+        "probeId": "claude-compat"
+      }
+    },
+    {
+      "rootId": "user-cursor",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".cursor/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "readEvidence": {
+        "kind": "bool-config-v1",
+        "probeId": "cursor-compat"
+      }
+    },
+    {
+      "rootId": "project-cursor",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".cursor/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "readEvidence": {
+        "kind": "bool-config-v1",
+        "probeId": "cursor-compat"
+      }
+    }
+  ],
+  "probes": [
+    {
+      "probeId": "claude-compat",
+      "base": "home",
+      "relative": ".grok/config.toml",
+      "format": "toml",
+      "keyPath": [
+        "compat",
+        "claude",
+        "skills"
+      ],
+      "expected": true,
+      "onMissing": true
+    },
+    {
+      "probeId": "cursor-compat",
+      "base": "home",
+      "relative": ".grok/config.toml",
+      "format": "toml",
+      "keyPath": [
+        "compat",
+        "cursor",
+        "skills"
+      ],
+      "expected": true,
+      "onMissing": true
+    }
+  ],
+  "binaryNames": [
+    "grok"
+  ]
+}

@@ -65,10 +65,12 @@ pub struct PackageTree {
     pub entries: Vec<TreeEntry>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+#[serde(rename_all="camelCase")]
 pub enum ReadState { Declared, ConfigEnabled, ConfigDisabled, Unknown }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+#[serde(rename_all="camelCase")]
 pub struct ReaderExposure {
     pub agent: AgentId,
     pub variant: String,

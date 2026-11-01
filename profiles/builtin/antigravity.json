@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "id": "antigravity",
+  "displayName": "Antigravity",
+  "packageFormat": "skill-md-v1",
+  "variants": [
+    "app",
+    "cli",
+    "ide"
+  ],
+  "defaultVariant": "app",
+  "roots": [
+    {
+      "rootId": "user-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".gemini/config/skills",
+      "discovery": "children",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "project-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".agents/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "legacy-project",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".agent/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100
+    },
+    {
+      "rootId": "legacy-ide",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".gemini/antigravity/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "appliesToVariants": [
+        "ide"
+      ]
+    },
+    {
+      "rootId": "cli-extra",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".gemini/antigravity-cli/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "appliesToVariants": [
+        "cli"
+      ]
+    },
+    {
+      "rootId": "gemini-extra",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".gemini/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100,
+      "appliesToVariants": [
+        "cli"
+      ]
+    }
+  ],
+  "probes": [],
+  "binaryNames": [
+    "agy"
+  ]
+}

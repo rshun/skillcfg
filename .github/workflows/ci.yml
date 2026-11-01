@@ -55,11 +55,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
         with:
           toolchain: '1.90.0'
+          components: clippy
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: cargo-lock
       - name: Test all implemented stage components
         run: cargo test --workspace --locked --no-fail-fast
+      - name: Platform-specific Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
   quality:
     needs: lockfile

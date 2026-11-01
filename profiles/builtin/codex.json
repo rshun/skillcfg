@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "codex",
+  "displayName": "Codex",
+  "packageFormat": "skill-md-v1",
+  "variants": [
+    "default"
+  ],
+  "defaultVariant": "default",
+  "roots": [
+    {
+      "rootId": "user-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".agents/skills",
+      "discovery": "children",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "project-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".agents/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "user-legacy",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".codex/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 100
+    }
+  ],
+  "probes": [],
+  "binaryNames": [
+    "codex"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "id": "custom.demo",
+  "displayName": "Example Agent",
+  "packageFormat": "skill-md-v1",
+  "variants": [
+    "default"
+  ],
+  "defaultVariant": "default",
+  "roots": [
+    {
+      "rootId": "user-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".example/skills",
+      "discovery": "children",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "project-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".example/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    }
+  ],
+  "probes": [],
+  "binaryNames": []
+}
