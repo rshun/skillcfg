@@ -81,3 +81,32 @@ fn invalid_root_is_an_error_not_an_empty_or_fallback_inventory() {
         .unwrap();
     assert!(!inventory.errors.is_empty());
 }
+
+#[test]
+fn alias_packages_are_one_inventory_item_with_two_sources() {
+    let env = env();
+    let root = env.home.join(".example/skills");
+    package(&root, "review");
+    let original = root.join("review");
+    let alias = root.join("alias");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(&original, &alias).unwrap();
+    #[cfg(windows)]
+    {
+        let result = std::process::Command::new("cmd")
+            .args(["/C", "mklink", "/J"])
+            .arg(&alias)
+            .arg(&original)
+            .output()
+            .unwrap();
+        assert!(result.status.success(), "fixture junction creation failed");
+    }
+    let registry = load_registry(&source(&env, vec![bytes(&profile("codex"))]), &env).unwrap();
+    let inventory = app(env, registry, Scope::User)
+        .list_agent_skills(AgentId::parse("codex").unwrap())
+        .unwrap();
+    assert_eq!(inventory.items.len(), 1);
+    assert_eq!(inventory.items[0].sources.len(), 2);
+    assert!(inventory.items[0].sources.contains(&original));
+    assert!(inventory.items[0].sources.contains(&alias));
+}

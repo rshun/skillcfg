@@ -284,6 +284,41 @@ fn shared_root_keeps_disabled_custom_agent_as_a_possible_reader() {
         "profile_not_enabled"
     );
 }
+
+#[test]
+fn incomplete_override_evidence_retains_known_builtin_reader() {
+    let env = env();
+    let mut p = profile("grok");
+    p["probes"] = json!([{"probeId":"enabled","base":"appdata","relative":"config.json","format":"json","keyPath":["enabled"],"expected":true,"onMissing":"unknown"}]);
+    p["roots"][0]["readEvidence"] = json!({"kind":"bool-config-v1","probeId":"enabled"});
+    let document = bytes(&p);
+    let mut registry = load_registry(&source(&env, vec![document.clone()]), &env).unwrap();
+    registry.approvals.push(Approval {
+        id: AgentId::parse("grok").unwrap(),
+        document,
+        platform: env.platform,
+        home: env.home.clone(),
+        appdata: None,
+        xdg_config: None,
+        enabled: true,
+        overrides: vec![skill_app::registry::LocalOverride {
+            root_id: "unknown-root".into(),
+            platform: env.platform,
+            scope: Scope::User,
+            project: None,
+            path: env.home.join("unapproved"),
+        }],
+    });
+    let app = app(env, registry, Scope::User);
+    let readers = reader_exposures(
+        &app.context.env.home.join(".example/skills/review"),
+        &app.context,
+    )
+    .unwrap();
+    assert!(readers.iter().any(|r| r.agent.as_str() == "grok"
+        && r.evidence == skill_core::ReadState::Unknown));
+    assert!(!app.context.env.home.join("unapproved").exists());
+}
 #[test]
 fn false_and_unknown_probes_do_not_switch_write_root_or_expose_other_fields() {
     let env = env();

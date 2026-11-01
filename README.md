@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-设计与实施计划已归档，正在进入第一阶段。产品功能尚未完成；当前不提供可用于真实 Agent 的写入工具。
+设计与实施计划已归档，第一阶段核心、只读发现和分发计划已实现并通过四平台 GitHub CI。完整产品尚未完成；当前不提供可用于真实 Agent 的写入工具。
 
 - [完整设计](docs/superpowers/specs/2026-11-01-skill-hub-design.md)
 - [实施计划](docs/superpowers/plans/2026-11-01-skill-hub.md)

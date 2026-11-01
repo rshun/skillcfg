@@ -106,6 +106,24 @@ fn reads_binary_unicode_and_empty_directory_without_mutation() {
             && matches!(&e.kind,EntryKind::File{bytes,..} if bytes==&[0,255,42])));
     assert_eq!(fs::read(root.join("image.bin")).unwrap(), vec![0, 255, 42]);
 }
+
+#[test]
+fn preserves_unicode_resources_beyond_legacy_windows_path_length() {
+    let root = package();
+    let segments: Vec<_> = (0..8)
+        .map(|i| format!("segment-{i}-{}", "x".repeat(32)))
+        .collect();
+    let relative = format!("{}/资源.bin", segments.join("/"));
+    let resource = root.join(&relative);
+    assert!(resource.to_string_lossy().len() > 260);
+    fs::create_dir_all(resource.parent().unwrap()).unwrap();
+    fs::write(&resource, [0, 255, 23]).unwrap();
+    let snapshot = read_package_snapshot(&root, &ScanLimits::default()).unwrap();
+    assert!(snapshot.tree.entries.iter().any(|entry| {
+        entry.relative_path == relative
+            && matches!(&entry.kind, EntryKind::File { bytes, .. } if bytes == &[0, 255, 23])
+    }));
+}
 #[test]
 fn root_alias_is_same_physical_package_but_remains_read_only() {
     let root = package();
