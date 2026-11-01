@@ -4,6 +4,8 @@ pub mod compatibility;
 pub mod model;
 pub mod package;
 pub mod profile;
+pub mod plan;
+pub mod diff;
 
 pub use error::CoreError;
 pub use model::*;
