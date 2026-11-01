@@ -8,3 +8,5 @@ rust-version.workspace = true
 [dependencies]
 skill-core = { path = "../skill-core" }
 thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
