@@ -2,5 +2,8 @@
 pub mod paths;
 pub mod snapshot;
 pub mod transaction;
+pub mod disk;
+mod journal;
+mod lock;
 pub use transaction::*;
 pub use snapshot::{read_package_snapshot, IoError, PackageSnapshot, ScanLimits};

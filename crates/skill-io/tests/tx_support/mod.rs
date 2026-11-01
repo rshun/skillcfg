@@ -9,4 +9,4 @@ pub fn fixture()->(IoEngine,PathBuf){
     let target=root.join("agent/skills/review");fs::create_dir_all(&target).unwrap();fs::write(target.join("SKILL.md"),document("old")).unwrap();
     (IoEngine{backup_root:root.join("hub/backups"),audit_path:root.join("hub/audit/events.jsonl"),write_roots:vec![root.join("agent/skills")],write_files:vec![],scan_roots:vec![root.join("agent/skills")],protected_roots:vec![root.join("hub")],observer:Arc::new(Quiet)},target)
 }
-pub fn plan(path:&Path,before:Option<PackageTree>,after:Option<PackageTree>)->MutationPlan{MutationPlan{directories:vec![DirectoryChange{path:path.to_owned(),before,after}],files:vec![],kind:"distribution".into()}}
+pub fn plan(path:&Path,before:Option<PackageTree>,after:Option<PackageTree>)->MutationPlan{MutationPlan{directories:vec![DirectoryChange{path:path.to_owned(),before,after}],files:vec![],kind:"distribution".into(),..Default::default()}}
