@@ -12,6 +12,11 @@ pub struct HostEnv {
 }
 impl HostEnv {
     pub fn base(&self, base: Base) -> Option<&PathBuf> {
-        match base { Base::Home => Some(&self.home), Base::Project => self.project_root.as_ref(), Base::Appdata => self.appdata.as_ref(), Base::XdgConfig => self.xdg_config.as_ref() }
+        match base {
+            Base::Home => Some(&self.home),
+            Base::Project => self.project_root.as_ref(),
+            Base::Appdata => self.appdata.as_ref(),
+            Base::XdgConfig => self.xdg_config.as_ref(),
+        }
     }
 }

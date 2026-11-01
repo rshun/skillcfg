@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 #[serde(try_from = "String", into = "String")]
 pub struct AgentId(pub(crate) String);
 
@@ -23,10 +25,14 @@ impl TryFrom<String> for AgentId {
 }
 
 impl From<AgentId> for String {
-    fn from(value: AgentId) -> Self { value.0 }
+    fn from(value: AgentId) -> Self {
+        value.0
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Platform {
     Windows,
@@ -34,7 +40,9 @@ pub enum Platform {
     Linux,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Scope {
     User,
@@ -51,7 +59,10 @@ pub struct SkillMetadata {
 #[derive(Clone, PartialEq, Eq)]
 pub enum EntryKind {
     Directory,
-    File { bytes: Vec<u8>, unix_executable: bool },
+    File {
+        bytes: Vec<u8>,
+        unix_executable: bool,
+    },
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -66,11 +77,16 @@ pub struct PackageTree {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
-#[serde(rename_all="camelCase")]
-pub enum ReadState { Declared, ConfigEnabled, ConfigDisabled, Unknown }
+#[serde(rename_all = "camelCase")]
+pub enum ReadState {
+    Declared,
+    ConfigEnabled,
+    ConfigDisabled,
+    Unknown,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct ReaderExposure {
     pub agent: AgentId,
     pub variant: String,

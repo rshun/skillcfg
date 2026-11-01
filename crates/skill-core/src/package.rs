@@ -157,7 +157,7 @@ pub fn validate_package(tree: &PackageTree, platform: Platform) -> Vec<PackageIs
     if total > MAX_PACKAGE_BYTES {
         issue("package_too_large", None);
     }
-    for (path, _) in &paths {
+    for path in paths.keys() {
         let parts: Vec<_> = path.split('/').collect();
         for depth in 1..parts.len() {
             if paths
