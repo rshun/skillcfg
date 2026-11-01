@@ -315,8 +315,9 @@ fn incomplete_override_evidence_retains_known_builtin_reader() {
         &app.context,
     )
     .unwrap();
-    assert!(readers.iter().any(|r| r.agent.as_str() == "grok"
-        && r.evidence == skill_core::ReadState::Unknown));
+    assert!(readers
+        .iter()
+        .any(|r| r.agent.as_str() == "grok" && r.evidence == skill_core::ReadState::Unknown));
     assert!(!app.context.env.home.join("unapproved").exists());
 }
 #[test]
