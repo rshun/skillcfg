@@ -210,3 +210,30 @@ fn binary_changes_are_summaries_and_metadata_cache_mismatch_is_rejected() {
     )
     .is_err());
 }
+
+#[test]
+fn structured_sensitive_fields_are_blocked_in_source_and_existing_target() {
+    for content in [
+        r#"{"token":"SYNTHETIC_PRIVATE_MARKER"}"#,
+        r#"{"ordinary":true,"nested":{"password":"SYNTHETIC_PRIVATE_MARKER"}}"#,
+        r#"{"headers":{"Authorization":"Bearer SYNTHETIC_PRIVATE_MARKER"}}"#,
+        "nested:\n  token: SYNTHETIC_PRIVATE_MARKER",
+    ] {
+        let mut private = package("private", "review", "safe");
+        private.tree.entries.push(TreeEntry {
+            relative_path: "settings.json".into(),
+            kind: EntryKind::File { bytes: content.as_bytes().to_vec(), unix_executable: false },
+        });
+        let clean = package("clean", "review", "safe");
+        for (source, before) in [(&private, None), (&clean, Some(private.tree.clone()))] {
+            let result = plan_distribution(
+                std::slice::from_ref(source),
+                &[target(source, "codex", "one", before)],
+                &[pair(source, "codex")],
+                &BTreeMap::new(),
+            ).unwrap();
+            assert_eq!(result.groups[0].disposition, Disposition::Blocked);
+            assert!(!format!("{:?}", redacted_plan_dto(&result)).contains("SYNTHETIC_PRIVATE_MARKER"));
+        }
+    }
+}

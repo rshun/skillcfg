@@ -20,6 +20,39 @@ fn temp() -> PathBuf {
     fs::create_dir_all(&path).unwrap();
     path
 }
+
+#[cfg(unix)]
+#[test]
+fn bounded_reader_fifo_child() {
+    if let Some(path) = std::env::var_os("SKILL_HUB_FIFO_FIXTURE") {
+        let error = skill_io::snapshot::read_bounded_file(std::path::Path::new(&path), 1024).err().unwrap();
+        assert_eq!(error.code, "not_regular_file");
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn bounded_reader_rejects_fifo_without_waiting_for_writer() {
+    use std::{process::Command, time::{Duration, Instant}};
+    let fifo = temp().join("pending.json");
+    assert!(Command::new("mkfifo").arg(&fifo).status().unwrap().success());
+    let mut child = Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "bounded_reader_fifo_child"])
+        .env("SKILL_HUB_FIFO_FIXTURE", fifo).spawn().unwrap();
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            assert!(status.success());
+            break;
+        }
+        if Instant::now() >= deadline {
+            child.kill().unwrap();
+            child.wait().unwrap();
+            panic!("bounded reader blocked on a FIFO");
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
 fn package() -> PathBuf {
     let root = temp().join("技能包");
     fs::create_dir_all(root.join("empty")).unwrap();
