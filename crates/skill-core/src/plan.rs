@@ -82,7 +82,7 @@ pub fn plan_distribution(
         }
     }
     let mut snapshots = BTreeMap::new();
-    let mut source_trees = BTreeMap::new();
+    let mut sources = BTreeSet::new();
     let mut target_map = BTreeMap::new();
     let mut bytes = 0usize;
     for target in targets {
@@ -98,6 +98,23 @@ pub fn plan_distribution(
         let package = package_map
             .get(&pair.package_id)
             .ok_or(CoreError::new("unknown_package"))?;
+        if sources.insert(package.id.clone()) {
+            bytes = bytes.saturating_add(tree_bytes(&package.tree));
+        }
+        let target = *target_map.get(pair).ok_or(CoreError::new("missing_target"))?;
+        if snapshots.insert(target.key.clone(), true).is_none() {
+            if let Some(tree) = &target.tree {
+                bytes = bytes.saturating_add(tree_bytes(tree));
+            }
+        }
+        if bytes > 64 * 1024 * 1024 {
+            return Err(CoreError::new("preview_too_large"));
+        }
+    }
+    // No raw content is cloned until the complete request fits the budget.
+    let mut source_trees = BTreeMap::new();
+    for id in sources {
+        let package = package_map[&id];
         let parsed = package.tree.entries.iter().find_map(|e| {
             if e.relative_path == "SKILL.md" {
                 if let EntryKind::File { bytes, .. } = &e.kind {
@@ -112,21 +129,7 @@ pub fn plan_distribution(
         if parsed.as_ref() != Some(&package.metadata) {
             return Err(CoreError::new("metadata_mismatch"));
         }
-        if !source_trees.contains_key(&package.id) {
-            bytes = bytes.saturating_add(tree_bytes(&package.tree));
-            source_trees.insert(package.id.clone(), Arc::new(package.tree.clone()));
-        }
-        let target = *target_map
-            .get(pair)
-            .ok_or(CoreError::new("missing_target"))?;
-        if snapshots.insert(target.key.clone(), true).is_none() {
-            if let Some(tree) = &target.tree {
-                bytes = bytes.saturating_add(tree_bytes(tree));
-            }
-        }
-    }
-    if bytes > 64 * 1024 * 1024 {
-        return Err(CoreError::new("preview_too_large"));
+        source_trees.insert(id, Arc::new(package.tree.clone()));
     }
     let mut groups: BTreeMap<TargetKey, PlanGroup> = BTreeMap::new();
     for pair in selected {

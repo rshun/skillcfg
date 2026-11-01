@@ -25,7 +25,9 @@ fn temp() -> PathBuf {
 #[test]
 fn bounded_reader_fifo_child() {
     if let Some(path) = std::env::var_os("SKILL_HUB_FIFO_FIXTURE") {
-        let error = skill_io::snapshot::read_bounded_file(std::path::Path::new(&path), 1024).err().unwrap();
+        let error = skill_io::snapshot::read_bounded_file(std::path::Path::new(&path), 1024)
+            .err()
+            .unwrap();
         assert_eq!(error.code, "not_regular_file");
     }
 }
@@ -33,12 +35,21 @@ fn bounded_reader_fifo_child() {
 #[cfg(unix)]
 #[test]
 fn bounded_reader_rejects_fifo_without_waiting_for_writer() {
-    use std::{process::Command, time::{Duration, Instant}};
+    use std::{
+        process::Command,
+        time::{Duration, Instant},
+    };
     let fifo = temp().join("pending.json");
-    assert!(Command::new("mkfifo").arg(&fifo).status().unwrap().success());
+    assert!(Command::new("mkfifo")
+        .arg(&fifo)
+        .status()
+        .unwrap()
+        .success());
     let mut child = Command::new(std::env::current_exe().unwrap())
         .args(["--exact", "bounded_reader_fifo_child"])
-        .env("SKILL_HUB_FIFO_FIXTURE", fifo).spawn().unwrap();
+        .env("SKILL_HUB_FIFO_FIXTURE", fifo)
+        .spawn()
+        .unwrap();
     let deadline = Instant::now() + Duration::from_secs(3);
     loop {
         if let Some(status) = child.try_wait().unwrap() {

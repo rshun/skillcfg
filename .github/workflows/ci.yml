@@ -85,9 +85,11 @@ jobs:
           name: formatting-patch
           path: formatting.patch
           retention-days: 14
-      - name: Check checked-in formatting
-        run: git diff --exit-code -- crates
-      - name: Check checked-in lockfile matches generated workspace graph
-        run: git diff --exit-code -- Cargo.lock
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Check checked-in formatting
+        if: success() || failure()
+        run: git diff --exit-code -- crates
+      - name: Check checked-in lockfile matches generated workspace graph
+        if: success() || failure()
+        run: git diff --exit-code -- Cargo.lock

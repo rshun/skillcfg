@@ -40,8 +40,39 @@ pub struct PackageSnapshot {
 }
 
 pub fn read_bounded_file(path: &Path, limit: usize) -> Result<Vec<u8>, IoError> {
-    let file = fs::File::open(path).map_err(crate::paths::error)?;
-    if file.metadata().map_err(crate::paths::error)?.len() > limit as u64 {
+    if !fs::symlink_metadata(path).map_err(crate::paths::error)?.is_file() {
+        return Err(IoError { code: "not_regular_file" });
+    }
+    let mut options = fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        // Nonblocking prevents a replacement FIFO from hanging open; no-follow
+        // rejects a final-component symlink swapped in after the metadata check.
+        #[cfg(target_os = "linux")]
+        options.custom_flags(0x800 | 0x20000); // O_NONBLOCK | O_NOFOLLOW
+        #[cfg(target_os = "macos")]
+        options.custom_flags(0x4 | 0x100); // O_NONBLOCK | O_NOFOLLOW
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x00200000); // FILE_FLAG_OPEN_REPARSE_POINT
+    }
+    let file = options.open(path).map_err(crate::paths::error)?;
+    let metadata = file.metadata().map_err(crate::paths::error)?;
+    if !metadata.is_file() {
+        return Err(IoError { code: "not_regular_file" });
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        if metadata.file_attributes() & 0x400 != 0 {
+            return Err(IoError { code: "not_regular_file" });
+        }
+    }
+    if metadata.len() > limit as u64 {
         return Err(IoError {
             code: "file_too_large",
         });
