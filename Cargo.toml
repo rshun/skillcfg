@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/skill-core", "crates/skill-io", "crates/skill-app"]
+members = ["crates/skill-core", "crates/skill-io", "crates/skill-app", "crates/skill-cli"]
 
 [workspace.package]
 version = "0.1.0"

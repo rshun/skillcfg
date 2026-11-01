@@ -3,6 +3,8 @@ pub mod detect;
 pub mod env;
 pub mod registry;
 pub mod roots;
+pub mod service;
+pub use service::*;
 
 pub use env::HostEnv;
 pub use registry::{
@@ -35,3 +37,4 @@ pub struct AppContext {
 pub struct App {
     pub context: AppContext,
 }
+impl App { pub fn new(context:AppContext)->Self{Self{context}} }

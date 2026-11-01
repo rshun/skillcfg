@@ -78,11 +78,9 @@ pub fn package(root: &Path, name: &str) {
     .unwrap();
 }
 pub fn app(env: HostEnv, registry: RegistrySnapshot, scope: Scope) -> App {
-    App {
-        context: AppContext {
+    App::new(AppContext {
             env,
             registry,
             scope,
-        },
-    }
+        })
 }
