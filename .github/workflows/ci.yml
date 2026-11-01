@@ -34,6 +34,8 @@ jobs:
         run: |
           if [ ! -f Cargo.lock ] || [ "$REFRESH_LOCKFILE" = true ]; then
             cargo generate-lockfile
+          else
+            cargo update --workspace
           fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -82,5 +84,7 @@ jobs:
           retention-days: 14
       - name: Check checked-in formatting
         run: git diff --exit-code -- crates
+      - name: Check checked-in lockfile matches generated workspace graph
+        run: git diff --exit-code -- Cargo.lock
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings

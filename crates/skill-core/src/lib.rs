@@ -3,6 +3,7 @@ pub mod error;
 pub mod compatibility;
 pub mod model;
 pub mod package;
+pub mod profile;
 
 pub use error::CoreError;
 pub use model::*;

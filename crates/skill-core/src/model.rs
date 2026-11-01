@@ -65,6 +65,17 @@ pub struct PackageTree {
     pub entries: Vec<TreeEntry>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ReadState { Declared, ConfigEnabled, ConfigDisabled, Unknown }
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ReaderExposure {
+    pub agent: AgentId,
+    pub variant: String,
+    pub root_id: String,
+    pub evidence: ReadState,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PackageIssue {
     pub code: &'static str,
