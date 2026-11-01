@@ -109,6 +109,7 @@ pub fn validate_package(tree: &PackageTree, platform: Platform) -> Vec<PackageIs
         issues.push(PackageIssue {
             code,
             path: path.map(crate::compatibility::safe_text),
+            severity: crate::IssueSeverity::Blocking,
         })
     };
     if tree.entries.len() > MAX_ENTRIES {

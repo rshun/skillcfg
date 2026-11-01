@@ -98,6 +98,12 @@ pub struct ReaderExposure {
 pub struct PackageIssue {
     pub code: &'static str,
     pub path: Option<String>,
+    pub severity: IssueSeverity,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IssueSeverity {
+    Blocking,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

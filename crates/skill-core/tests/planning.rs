@@ -75,7 +75,7 @@ fn shared_target_has_one_change_and_all_possible_readers() {
     a.possible_readers.push(reader.clone());
     b.possible_readers.push(reader);
     let result = plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &[a, b],
         &[pair(&p, "codex"), pair(&p, "custom.fifth")],
         &BTreeMap::new(),
@@ -116,7 +116,12 @@ fn unmanaged_difference_defaults_to_skip_and_replace_lists_extra_old_files() {
     });
     let targets = [target(&p, "codex", "one", Some(old))];
     let selection = [pair(&p, "codex")];
-    let skipped = plan_distribution(&[p.clone()], &targets, &selection, &BTreeMap::new()).unwrap();
+    let skipped = plan_distribution(
+        std::slice::from_ref(&p),
+        &targets,
+        &selection,
+        &BTreeMap::new(),
+    ).unwrap();
     assert_eq!(skipped.groups[0].disposition, Disposition::Skipped);
     let decisions = BTreeMap::from([(TargetKey("one".into()), ConflictDecision::Replace)]);
     let replace = plan_distribution(&[p], &targets, &selection, &decisions).unwrap();
@@ -128,7 +133,7 @@ fn identical_and_empty_selection_have_no_writes() {
     let p = package("p", "review", "same");
     let targets = [target(&p, "codex", "one", Some(p.tree.clone()))];
     let result = plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &targets,
         &[pair(&p, "codex")],
         &BTreeMap::new(),
@@ -146,7 +151,7 @@ fn stale_shared_baselines_and_link_targets_block() {
     let a = target(&p, "codex", "shared", None);
     let b = target(&p, "grok", "shared", Some(p.tree.clone()));
     let result = plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &[a, b],
         &[pair(&p, "codex"), pair(&p, "grok")],
         &BTreeMap::new(),
@@ -156,7 +161,7 @@ fn stale_shared_baselines_and_link_targets_block() {
     let mut linked = target(&p, "codex", "link", None);
     linked.blocked = Some("target_link");
     let result = plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &[linked],
         &[pair(&p, "codex")],
         &BTreeMap::new(),
@@ -169,7 +174,7 @@ fn unsafe_assignment_is_blocked_and_public_diff_does_not_reveal_it() {
     let p = package("p", "review", "password: 'SYNTHETIC_PRIVATE_MARKER'");
     let targets = [target(&p, "codex", "one", None)];
     let result = plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &targets,
         &[pair(&p, "codex")],
         &BTreeMap::new(),
@@ -190,7 +195,7 @@ fn binary_changes_are_summaries_and_metadata_cache_mismatch_is_rejected() {
     });
     let targets = [target(&p, "codex", "one", None)];
     let result = plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &targets,
         &[pair(&p, "codex")],
         &BTreeMap::new(),
@@ -203,7 +208,7 @@ fn binary_changes_are_summaries_and_metadata_cache_mismatch_is_rejected() {
         .any(|f| f.path == "image.bin" && f.binary && f.after.is_none()));
     p.metadata.name = "different".into();
     assert!(plan_distribution(
-        &[p.clone()],
+        std::slice::from_ref(&p),
         &targets,
         &[pair(&p, "codex")],
         &BTreeMap::new()

@@ -256,6 +256,22 @@ fn missing_appdata_disables_root_without_fallback() {
     assert!(roots.roots.is_empty());
     assert!(roots.issues.contains(&"missing_base"));
 }
+
+#[test]
+fn shared_root_keeps_disabled_custom_agent_as_a_possible_reader() {
+    let env = env();
+    let source = source(&env, vec![bytes(&profile("codex"))]);
+    fs::create_dir_all(&source.custom_dir).unwrap();
+    let document = bytes(&profile("custom.shared"));
+    fs::write(source.custom_dir.join("shared.json"), &document).unwrap();
+    approve(&source, &env, document, false);
+    let registry = load_registry(&source, &env).unwrap();
+    let app = app(env, registry, Scope::User);
+    let readers = reader_exposures(&app.context.env.home.join(".example/skills/review"), &app.context).unwrap();
+    assert!(readers.iter().any(|r| r.agent.as_str() == "codex"));
+    assert!(readers.iter().any(|r| r.agent.as_str() == "custom.shared" && r.evidence == skill_core::ReadState::Unknown));
+    assert_eq!(app.list_agent_skills(AgentId::parse("custom.shared").unwrap()).err().unwrap().code, "profile_not_enabled");
+}
 #[test]
 fn false_and_unknown_probes_do_not_switch_write_root_or_expose_other_fields() {
     let env = env();
@@ -265,9 +281,9 @@ fn false_and_unknown_probes_do_not_switch_write_root_or_expose_other_fields() {
     let registry = load_registry(&source(&env, vec![bytes(&p)]), &env).unwrap();
     let app = app(env, registry, Scope::User);
     let profile = app.context.registry.entries[0].profile.as_ref().unwrap();
-    for content in [
-        "[compat]\nskills = false\nprivate = 'SYNTHETIC_PRIVATE_MARKER'",
-        "invalid = [",
+    for (content, expected) in [
+        ("[compat]\nskills = false\nprivate = 'SYNTHETIC_PRIVATE_MARKER'", skill_core::ReadState::ConfigDisabled),
+        ("invalid = [", skill_core::ReadState::Unknown),
     ] {
         fs::write(app.context.env.home.join("config.toml"), content).unwrap();
         assert_eq!(
@@ -285,6 +301,7 @@ fn false_and_unknown_probes_do_not_switch_write_root_or_expose_other_fields() {
         )
         .unwrap();
         assert!(!readers.is_empty());
+        assert!(readers.iter().all(|r| r.evidence == expected));
         assert!(!format!("{readers:?}").contains("SYNTHETIC_PRIVATE_MARKER"));
     }
 }

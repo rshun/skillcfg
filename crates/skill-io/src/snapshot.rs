@@ -40,8 +40,13 @@ pub struct PackageSnapshot {
 }
 
 pub fn read_bounded_file(path: &Path, limit: usize) -> Result<Vec<u8>, IoError> {
-    if !fs::symlink_metadata(path).map_err(crate::paths::error)?.is_file() {
-        return Err(IoError { code: "not_regular_file" });
+    if !fs::symlink_metadata(path)
+        .map_err(crate::paths::error)?
+        .is_file()
+    {
+        return Err(IoError {
+            code: "not_regular_file",
+        });
     }
     let mut options = fs::OpenOptions::new();
     options.read(true);
@@ -63,13 +68,17 @@ pub fn read_bounded_file(path: &Path, limit: usize) -> Result<Vec<u8>, IoError> 
     let file = options.open(path).map_err(crate::paths::error)?;
     let metadata = file.metadata().map_err(crate::paths::error)?;
     if !metadata.is_file() {
-        return Err(IoError { code: "not_regular_file" });
+        return Err(IoError {
+            code: "not_regular_file",
+        });
     }
     #[cfg(windows)]
     {
         use std::os::windows::fs::MetadataExt;
         if metadata.file_attributes() & 0x400 != 0 {
-            return Err(IoError { code: "not_regular_file" });
+            return Err(IoError {
+                code: "not_regular_file",
+            });
         }
     }
     if metadata.len() > limit as u64 {

@@ -1,7 +1,9 @@
 //! Conservative display protection; it is not a credential-free certification.
 pub fn contains_sensitive_literal(text: &str) -> bool {
     serde_json::from_str::<serde_json::Value>(text).is_ok_and(|value| json_sensitive(&value))
-        || text.split(['\n', '{', '}', ',', ';']).any(sensitive_assignment)
+        || text
+            .split(['\n', '{', '}', ',', ';'])
+            .any(sensitive_assignment)
         || text
             .split(|c: char| c.is_whitespace() || "\"'`=,:;()[]{}<>".contains(c))
             .any(|word| {
@@ -23,7 +25,9 @@ pub fn contains_sensitive_literal(text: &str) -> bool {
 fn json_sensitive(value: &serde_json::Value) -> bool {
     match value {
         serde_json::Value::Object(fields) => fields.iter().any(|(key, value)| {
-            value.as_str().is_some_and(|text| sensitive_assignment(&format!("{key}: {text}")))
+            value
+                .as_str()
+                .is_some_and(|text| sensitive_assignment(&format!("{key}: {text}")))
                 || json_sensitive(value)
         }),
         serde_json::Value::Array(values) => values.iter().any(json_sensitive),

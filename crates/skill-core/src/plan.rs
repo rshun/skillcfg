@@ -101,7 +101,9 @@ pub fn plan_distribution(
         if sources.insert(package.id.clone()) {
             bytes = bytes.saturating_add(tree_bytes(&package.tree));
         }
-        let target = *target_map.get(pair).ok_or(CoreError::new("missing_target"))?;
+        let target = *target_map
+            .get(pair)
+            .ok_or(CoreError::new("missing_target"))?;
         if snapshots.insert(target.key.clone(), true).is_none() {
             if let Some(tree) = &target.tree {
                 bytes = bytes.saturating_add(tree_bytes(tree));

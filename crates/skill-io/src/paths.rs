@@ -19,7 +19,7 @@ pub fn is_link(path: &Path) -> Result<bool, IoError> {
     #[cfg(windows)]
     {
         use std::os::windows::fs::MetadataExt;
-        return Ok(meta.file_attributes() & 0x400 != 0);
+        Ok(meta.file_attributes() & 0x400 != 0)
     }
     #[cfg(not(windows))]
     {

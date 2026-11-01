@@ -83,20 +83,43 @@ impl crate::App {
         for entry in &self.context.registry.entries {
             let mut view = AgentProfileView {
                 id: entry.profile.as_ref().map(|p| p.id.clone()),
-                display_name: entry.profile.as_ref().map_or_else(|| "Invalid profile".into(), |p| p.display_name.clone()),
-                source: if entry.state == ProfileState::Builtin { "builtin" } else { "custom" },
+                display_name: entry
+                    .profile
+                    .as_ref()
+                    .map_or_else(|| "Invalid profile".into(), |p| p.display_name.clone()),
+                source: if entry.state == ProfileState::Builtin {
+                    "builtin"
+                } else {
+                    "custom"
+                },
                 state: entry.state,
-                variants: entry.profile.as_ref().map_or_else(Vec::new, |p| p.variants.clone()),
+                variants: entry
+                    .profile
+                    .as_ref()
+                    .map_or_else(Vec::new, |p| p.variants.clone()),
                 current_variant: None,
                 roots: Vec::new(),
                 issues: entry.issues.clone(),
             };
             if let Some(profile) = &entry.profile {
-                view.current_variant = Some(self.context.registry.selected_variants.get(&profile.id).unwrap_or(&profile.default_variant).clone());
+                view.current_variant = Some(
+                    self.context
+                        .registry
+                        .selected_variants
+                        .get(&profile.id)
+                        .unwrap_or(&profile.default_variant)
+                        .clone(),
+                );
                 // Pending/invalid definitions are listed without touching their roots.
-                if matches!(entry.state, ProfileState::Builtin | ProfileState::Enabled | ProfileState::Disabled) {
+                if matches!(
+                    entry.state,
+                    ProfileState::Builtin | ProfileState::Enabled | ProfileState::Disabled
+                ) {
                     match crate::roots::resolve_profile_roots(profile, &self.context) {
-                        Ok(resolved) => { view.roots = resolved.roots; view.issues.extend(resolved.issues); }
+                        Ok(resolved) => {
+                            view.roots = resolved.roots;
+                            view.issues.extend(resolved.issues);
+                        }
                         Err(error) => view.issues.push(error.code),
                     }
                 }
