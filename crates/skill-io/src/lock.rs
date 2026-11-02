@@ -183,8 +183,17 @@ impl Drop for Lock {
     }
 }
 
-pub(crate) fn stale_owner(path:&Path)->Result<Option<String>,IoError>{
- match fs::symlink_metadata(path){Err(e) if e.kind()==std::io::ErrorKind::NotFound=>return Ok(None),Err(_)=>return Err(err("lock_unreadable")),Ok(_)=>{}}
- let mut file=open(path,false)?;let owner:Owner=serde_json::from_slice(&contents(&mut file)?).map_err(|_|err("unknown_lock_owner"))?;
- if owner.version!=1 || !skill_core::package::is_slug(&owner.operation_id){return Err(err("unknown_lock_owner"));}Ok(Some(owner.operation_id))
+pub(crate) fn stale_owner(path: &Path) -> Result<Option<String>, IoError> {
+    match fs::symlink_metadata(path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err(err("lock_unreadable")),
+        Ok(_) => {}
+    }
+    let mut file = open(path, false)?;
+    let owner: Owner =
+        serde_json::from_slice(&contents(&mut file)?).map_err(|_| err("unknown_lock_owner"))?;
+    if owner.version != 1 || !skill_core::package::is_slug(&owner.operation_id) {
+        return Err(err("unknown_lock_owner"));
+    }
+    Ok(Some(owner.operation_id))
 }

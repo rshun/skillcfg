@@ -113,7 +113,20 @@ impl App {
         state.library = Some(path.to_path_buf());
         Ok(LibraryView {
             first_use: loaded.raw.is_none(),
-            records: loaded.catalog.records.into_iter().map(|mut r|{r.display_name=skill_core::compatibility::safe_text(&r.display_name);r.source_path=PathBuf::from(skill_core::compatibility::safe_text(&r.source_path.to_string_lossy()));r.source_kind=skill_core::compatibility::safe_text(&r.source_kind);r.description=skill_core::compatibility::safe_text(&r.description);r}).collect(),
+            records: loaded
+                .catalog
+                .records
+                .into_iter()
+                .map(|mut r| {
+                    r.display_name = skill_core::compatibility::safe_text(&r.display_name);
+                    r.source_path = PathBuf::from(skill_core::compatibility::safe_text(
+                        &r.source_path.to_string_lossy(),
+                    ));
+                    r.source_kind = skill_core::compatibility::safe_text(&r.source_kind);
+                    r.description = skill_core::compatibility::safe_text(&r.description);
+                    r
+                })
+                .collect(),
         })
     }
     pub fn read_package(&self, id: &PackageId) -> Result<SafePackageView, AppError> {

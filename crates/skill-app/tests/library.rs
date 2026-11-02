@@ -157,6 +157,16 @@ fn broken_settings_cannot_be_saved_as_defaults() {
 }
 
 #[test]
-fn library_public_view_masks_source_credentials(){
- let(app,source,library,_)=ready();import(&app,&source,&library);let path=library.join("catalog.json");let mut catalog:serde_json::Value=serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();catalog["records"][0]["sourcePath"]=serde_json::json!("https://fixture:SYNTHETIC_PRIVATE_MARKER@example.invalid/source");fs::write(path,serde_json::to_vec(&catalog).unwrap()).unwrap();let view=app.load_library(&library).unwrap();assert!(!serde_json::to_string(&view).unwrap().contains("SYNTHETIC_PRIVATE_MARKER"));
+fn library_public_view_masks_source_credentials() {
+    let (app, source, library, _) = ready();
+    import(&app, &source, &library);
+    let path = library.join("catalog.json");
+    let mut catalog: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    catalog["records"][0]["sourcePath"] =
+        serde_json::json!("https://fixture:SYNTHETIC_PRIVATE_MARKER@example.invalid/source");
+    fs::write(path, serde_json::to_vec(&catalog).unwrap()).unwrap();
+    let view = app.load_library(&library).unwrap();
+    assert!(!serde_json::to_string(&view)
+        .unwrap()
+        .contains("SYNTHETIC_PRIVATE_MARKER"));
 }

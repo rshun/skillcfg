@@ -35,8 +35,8 @@ pub(crate) struct Pending {
     pub outcomes: Vec<SafeOutcome>,
     pub blocked: bool,
 }
-type LocationBinding=(PathBuf,Result<(PathBuf,String),String>);
-type ProbeBinding=(PathBuf,Result<Option<Vec<u8>>,String>);
+type LocationBinding = (PathBuf, Result<(PathBuf, String), String>);
+type ProbeBinding = (PathBuf, Result<Option<Vec<u8>>, String>);
 #[derive(PartialEq, Eq)]
 pub(crate) struct Stamp {
     pub locations: Vec<LocationBinding>,

@@ -652,11 +652,14 @@ impl IoEngine {
             .collect())
     }
     pub fn list_recoveries(&self) -> Result<Vec<RecoveryRecord>, IoError> {
-        let stale=crate::lock::stale_owner(&lock_path(self)?).ok().flatten();
+        let stale = crate::lock::stale_owner(&lock_path(self)?).ok().flatten();
         Ok(self
             .journals()?
             .into_iter()
-            .filter(|(_, j)| stale.as_ref()==Some(&j.id) || !matches!(j.state.as_str(), "verified" | "resolved" | "aborted"))
+            .filter(|(_, j)| {
+                stale.as_ref() == Some(&j.id)
+                    || !matches!(j.state.as_str(), "verified" | "resolved" | "aborted")
+            })
             .map(|(location, j)| RecoveryRecord {
                 operation_id: j.id,
                 kind: j.kind,

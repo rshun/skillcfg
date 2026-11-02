@@ -185,7 +185,10 @@ impl App {
                 });
                 continue;
             }
-            if let Some(i)=index {plan.retained.push((bindings[i].path.clone(),bindings[i].tree.clone()));}
+            if let Some(i) = index {
+                plan.retained
+                    .push((bindings[i].path.clone(), bindings[i].tree.clone()));
+            }
             view.groups.push(display_group(
                 destination.clone(),
                 before.as_ref(),

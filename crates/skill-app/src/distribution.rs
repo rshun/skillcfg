@@ -195,7 +195,7 @@ impl App {
                         .catalog
                         .records
                         .iter()
-                        .find(|r| &r.id == &id.0)
+                        .find(|r| r.id == id.0)
                         .ok_or(error("unknown_package"))?;
                     let selected_profiles = group
                         .selected_agents

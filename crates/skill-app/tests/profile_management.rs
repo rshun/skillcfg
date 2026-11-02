@@ -105,7 +105,25 @@ fn approval_preview_lists_all_local_variants_without_reading_probe_contents() {
 }
 
 #[test]
-fn historical_library_cannot_become_an_agent_root(){
- let (app,_,_,_)=ready();let mut settings=app.load_settings().unwrap();settings.settings.library_path=app.context.env.home.join("old-library");let mut settings=app.save_settings(SettingsRequest{expected_revision:settings.revision,settings:settings.settings}).unwrap();settings.settings.library_path=app.context.env.home.join("new-library");app.save_settings(SettingsRequest{expected_revision:settings.revision,settings:settings.settings}).unwrap();
- let mut p=profile("custom.fifth");p["roots"][0]["relative"]=serde_json::json!("old-library");let mut req=change();req.profile_json=bytes(&p);assert!(app.preview_agent_profile(req).is_err());
+fn historical_library_cannot_become_an_agent_root() {
+    let (app, _, _, _) = ready();
+    let mut settings = app.load_settings().unwrap();
+    settings.settings.library_path = app.context.env.home.join("old-library");
+    let mut settings = app
+        .save_settings(SettingsRequest {
+            expected_revision: settings.revision,
+            settings: settings.settings,
+        })
+        .unwrap();
+    settings.settings.library_path = app.context.env.home.join("new-library");
+    app.save_settings(SettingsRequest {
+        expected_revision: settings.revision,
+        settings: settings.settings,
+    })
+    .unwrap();
+    let mut p = profile("custom.fifth");
+    p["roots"][0]["relative"] = serde_json::json!("old-library");
+    let mut req = change();
+    req.profile_json = bytes(&p);
+    assert!(app.preview_agent_profile(req).is_err());
 }

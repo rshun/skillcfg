@@ -98,3 +98,6 @@ fn redirected_target_parent_invalidates_preview(){
  #[cfg(windows)] assert!(std::process::Command::new("cmd").args(["/C","mklink","/J"]).arg(parent).arg(&elsewhere).output().unwrap().status.success());
  assert!(app.commit_distribution(&preview.preview_id).is_err());assert!(!elsewhere.join("review").exists());
 }
+
+#[test]
+fn switching_variant_and_editing_profile_require_repreview(){for variant in [true,false]{let(base,source,library,target)=ready();let env=base.context.env;let mut p=profile("codex");p["variants"]=serde_json::json!(["app","cli"]);p["defaultVariant"]=serde_json::json!("app");let registry=load_registry(&service_support::source(&env,vec![bytes(&p)]),&env).unwrap();let app=service_support::app(env,registry,skill_core::Scope::User);let id=import(&app,&source,&library);let preview=app.preview_distribution(request(&id,&library)).unwrap();if variant{let mut s=app.load_settings().unwrap();s.settings.agent_variants.insert(skill_core::AgentId::parse("codex").unwrap(),"cli".into());app.save_settings(SettingsRequest{expected_revision:s.revision,settings:s.settings}).unwrap();}else{let dir=app.context.env.home.join(".skill-hub/agents");fs::create_dir_all(&dir).unwrap();fs::write(dir.join("new.json"),bytes(&profile("custom.changed"))).unwrap();}assert!(app.commit_distribution(&preview.preview_id).is_err());assert!(!target.exists());}}

@@ -10,9 +10,9 @@ use skill_core::{
 };
 use std::{
     collections::BTreeSet,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
-type ApprovalData=(Vec<Approval>,Option<Vec<u8>>,PathBuf);
+type ApprovalData = (Vec<Approval>, Option<Vec<u8>>, PathBuf);
 pub(crate) struct ProfileBaseline {
     pub id: AgentId,
     pub path: Option<PathBuf>,
@@ -188,8 +188,15 @@ impl App {
         let stamp = self.stamp()?;
         let mut seen = BTreeSet::new();
         let (settings, backups, _) = self.settings_data()?;
-        let (authority,_)=self.authority()?;
-        let private_roots=authority.libraries.into_iter().chain(authority.backups).chain(backups.iter().cloned()).chain([settings.library_path.clone()]).map(|p|skill_io::disk::resolved_path(&p)).collect::<Result<Vec<_>,_>>()?;
+        let (authority, _) = self.authority()?;
+        let private_roots = authority
+            .libraries
+            .into_iter()
+            .chain(authority.backups)
+            .chain(backups.iter().cloned())
+            .chain([settings.library_path.clone()])
+            .map(|p| skill_io::disk::resolved_path(&p))
+            .collect::<Result<Vec<_>, _>>()?;
         for o in &req.local_root_overrides {
             if o.platform != self.context.env.platform
                 || !seen.insert((o.root_id.clone(), o.scope))
@@ -205,7 +212,7 @@ impl App {
             if overlap(
                 &actual,
                 &skill_io::disk::resolved_path(&settings.library_path)?,
-            ) || private_roots.iter().any(|b|overlap(&actual,b))
+            ) || private_roots.iter().any(|b| overlap(&actual, b))
             {
                 return Err(error("protected_root"));
             }
@@ -264,7 +271,8 @@ impl App {
                     if overlap(
                         &actual,
                         &skill_io::disk::resolved_path(&settings.library_path)?,
-                    ) || private_roots.iter().any(|b|overlap(&actual,b)) {
+                    ) || private_roots.iter().any(|b| overlap(&actual, b))
+                    {
                         return Err(error("protected_root"));
                     }
                     resolved_roots.push(skill_core::compatibility::safe_text(
