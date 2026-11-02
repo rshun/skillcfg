@@ -180,25 +180,4 @@ impl App {
             code: "not_implemented",
         })
     }
-    pub fn preview_agent_profile(
-        &self,
-        _req: ProfileChangeRequest,
-    ) -> Result<ProfilePreviewDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn commit_agent_profile(&self, _id: &str) -> Result<ReceiptDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn set_agent_profile_enabled(
-        &self,
-        _req: ProfileEnableRequest,
-    ) -> Result<ReceiptDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
 }

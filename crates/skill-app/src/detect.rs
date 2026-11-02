@@ -18,10 +18,10 @@ pub struct AgentInventory {
 }
 impl App {
     pub fn list_agent_skills(&self, agent: AgentId) -> Result<AgentInventory, AppError> {
+        let context = self.runtime_context()?;
         use skill_core::{parse_skill_document, validate_package, EntryKind};
         use std::{collections::BTreeMap, fs};
-        let entry = self
-            .context
+        let entry = context
             .registry
             .entries
             .iter()
@@ -38,10 +38,11 @@ impl App {
             });
         }
         let profile = entry.profile.as_ref().unwrap();
-        let resolved = crate::roots::resolve_profile_roots(profile, &self.context)?;
-        let installed = self.context.env.search_path.iter().any(|dir| {
+        self.profile_authorized(profile, &context, false)?;
+        let resolved = crate::roots::resolve_profile_roots(profile, &context)?;
+        let installed = context.env.search_path.iter().any(|dir| {
             profile.binary_names.iter().any(|name| {
-                let suffixes = if self.context.env.platform == skill_core::Platform::Windows {
+                let suffixes = if context.env.platform == skill_core::Platform::Windows {
                     vec![".exe", ".cmd", ".bat", ""]
                 } else {
                     vec![""]
@@ -97,7 +98,7 @@ impl App {
                             continue;
                         }
                         let validation =
-                            validate_package(&snapshot.tree, self.context.env.platform);
+                            validate_package(&snapshot.tree, context.env.platform);
                         let metadata = if validation.is_empty() {
                             snapshot.tree.entries.iter().find_map(|e| {
                                 if e.relative_path == "SKILL.md" {

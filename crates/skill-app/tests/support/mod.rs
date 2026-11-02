@@ -56,6 +56,7 @@ pub fn approve(source: &RegistrySource, env: &HostEnv, document: Vec<u8>, enable
     )
     .unwrap();
     let approval = Approval {
+        root_proofs: None,
         id,
         document,
         platform: env.platform,

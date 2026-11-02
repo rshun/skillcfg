@@ -12,9 +12,11 @@ pub(crate) struct Session {
     pub scan: Option<crate::importing::ScanState>,
     pub preview: Option<Pending>,
     pub settings_tokens: BTreeMap<String, Option<Vec<u8>>>,
+    pub profile_tokens: BTreeMap<String, crate::profiles::ProfileBaseline>,
     pub edits: BTreeMap<String, EditBaseline>,
 }
 pub(crate) struct EditBaseline {
+    pub catalog: Option<Vec<u8>>,
     pub library: PathBuf,
     pub id: String,
     pub stamp: Stamp,
@@ -72,18 +74,7 @@ pub(crate) fn error(code: &'static str) -> AppError {
 }
 impl App {
     pub fn with_clock(context: AppContext, clock: Arc<dyn Clock>) -> Self {
-        let builtins = context
-            .registry
-            .entries
-            .iter()
-            .filter(|e| {
-                matches!(e.state, ProfileState::Builtin | ProfileState::Disabled)
-                    && e.profile
-                        .as_ref()
-                        .is_some_and(|p| !p.id.as_str().starts_with("custom."))
-            })
-            .map(|e| e.raw.clone())
-            .collect();
+        let builtins = context.registry.builtin_documents.clone();
         let source = RegistrySource {
             builtins,
             custom_dir: context.env.home.join(".skill-hub/agents"),
@@ -290,6 +281,7 @@ impl App {
             audit_path: self.context.env.home.join(".skill-hub/audit/events.jsonl"),
             write_roots,
             write_files,
+            write_file_roots: vec![self.source.custom_dir.clone()],
             scan_roots,
             protected_roots,
             observer: Arc::new(skill_io::Quiet),

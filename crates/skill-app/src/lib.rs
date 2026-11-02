@@ -2,6 +2,7 @@
 pub mod detect;
 pub mod env;
 mod importing;
+mod profiles;
 mod library;
 mod preview;
 pub mod registry;

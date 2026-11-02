@@ -16,6 +16,7 @@ pub struct FileChange {
 }
 #[derive(Clone, Default)]
 pub struct MutationPlan {
+    pub retained: Vec<(PathBuf, PackageTree)>,
     pub directories: Vec<DirectoryChange>,
     pub files: Vec<FileChange>,
     pub kind: String,
@@ -77,6 +78,7 @@ pub struct IoEngine {
     pub audit_path: PathBuf,
     pub write_roots: Vec<PathBuf>,
     pub write_files: Vec<PathBuf>,
+    pub write_file_roots: Vec<PathBuf>,
     pub scan_roots: Vec<PathBuf>,
     pub protected_roots: Vec<PathBuf>,
     pub observer: Arc<dyn Observer>,
@@ -123,10 +125,8 @@ impl IoEngine {
             {
                 return Err(err("unauthorized_target"));
             }
-        } else if !self
-            .write_files
-            .iter()
-            .any(|p| resolved_path(p).is_ok_and(|p| p == actual))
+        } else if !(self.write_files.iter().any(|p| resolved_path(p).is_ok_and(|p| p == actual))
+            || self.write_file_roots.iter().any(|root| resolved_path(root).is_ok_and(|root|actual.parent()==Some(root.as_path()) && actual.extension().is_some_and(|e|e=="json"))))
             || self
                 .scan_roots
                 .iter()
@@ -169,7 +169,7 @@ impl IoEngine {
         Ok(work)
     }
     pub fn prepare(&self, plan: &MutationPlan) -> Result<PreparedMutation, IoError> {
-        if plan.directories.len() + plan.files.len() > 4096
+        if plan.retained.len()>1024 || plan.directories.len() + plan.files.len() > 4096
             || plan.kind.len() > 128
             || !plan
                 .kind
@@ -193,6 +193,7 @@ impl IoEngine {
                 .saturating_add(change.before.as_ref().map_or(0, Vec::len))
                 .saturating_add(change.after.as_ref().map_or(0, Vec::len));
         }
+        for (_,tree) in &plan.retained { bytes=bytes.saturating_add(tree_size(tree)); }
         if bytes > 64 * 1024 * 1024 {
             return Err(err("preview_too_large"));
         }
@@ -201,6 +202,7 @@ impl IoEngine {
             metadata: plan.metadata.clone(),
             ..Default::default()
         };
+        for (path,tree) in &plan.retained {let actual=self.target(path,true)?;if optional_tree(&actual)?.as_ref()!=Some(tree){return Err(err("retained_baseline_changed"));}effective.retained.push((actual,tree.clone()));}
         for (path, directory, equal) in plan
             .directories
             .iter()
@@ -298,6 +300,7 @@ impl IoEngine {
             .join("write.lock");
         let lock = Lock::acquire(&lock_path, &location.join("released.lock"))?;
         let mut journal = Journal {
+            retained: effective.retained.iter().map(|(p,_)|p.clone()).collect(),
             version: 1,
             id,
             kind: plan.kind.clone(),
@@ -324,6 +327,7 @@ impl IoEngine {
                     write_blob(&location.join(format!("planned-files/{i}")), t)?;
                 }
             }
+            for (i,(_,tree)) in effective.retained.iter().enumerate(){write_tree(&location.join(format!("retained/{i}")),tree)?;}
             for item in &journal.items {
                 self.observer.event(Step::BackedUp, &item.path)?;
             }
@@ -472,6 +476,7 @@ impl IoEngine {
                 return Err(err("invalid_journal_path"));
             }
         }
+        if journal.retained.len()>1024{return Err(err("invalid_journal"));}for path in &journal.retained{self.target(path,true)?;}
         Ok((location, journal))
     }
     fn journals(&self) -> Result<Vec<(PathBuf, Journal)>, IoError> {
@@ -527,6 +532,7 @@ impl IoEngine {
         };
         let mut di = 0;
         let mut fi = 0;
+        for (i,path) in journal.retained.iter().enumerate(){let backup=location.join(format!("retained/{i}"));if !resolved_path(&backup)?.starts_with(&location){return Err(err("invalid_backup"));}let tree=optional_tree(&backup)?.ok_or(err("incomplete_backup"))?;plan.directories.push(DirectoryChange{path:path.clone(),before:optional_tree(path)?,after:Some(tree)});}
         for item in journal.items {
             if item.directory {
                 let original = if item.before {

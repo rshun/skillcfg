@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct Journal {
+    #[serde(default)]
+    pub retained: Vec<PathBuf>,
     pub version: u32,
     pub id: String,
     pub kind: String,

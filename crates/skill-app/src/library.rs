@@ -152,12 +152,13 @@ impl App {
         let package_id = record.id.clone();
         let stamp = self.stamp()?;
         let mut state = self.state.borrow_mut();
-        if state.edits.len() >= 16 {
+        if state.edits.len() >= 16 || state.edits.values().flat_map(|e|e.bindings.iter()).map(|b|crate::preview::tree_bytes(&b.tree)).sum::<usize>().saturating_add(loaded.bindings.iter().map(|b|crate::preview::tree_bytes(&b.tree)).sum::<usize>())>64*1024*1024 {
             state.edits.clear();
         }
         state.edits.insert(
             token.clone(),
             EditBaseline {
+                catalog: loaded.raw,
                 library,
                 id: id.0.clone(),
                 stamp,
@@ -188,6 +189,7 @@ impl App {
             return Err(error("edit_baseline_changed"));
         }
         let mut loaded = self.checked_library(&baseline.library)?;
+        if loaded.raw != baseline.catalog { return Err(error("edit_baseline_changed")); }
         let index = loaded
             .catalog
             .records
@@ -228,6 +230,7 @@ impl App {
         let authority = self.authority_change(Some(&loaded.path), None)?;
         let after = serde_json::to_vec(&loaded.catalog).map_err(|_| error("invalid_library"))?;
         let plan = skill_io::MutationPlan {
+            retained: vec![(loaded.bindings[index].path.clone(),loaded.bindings[index].tree.clone())],
             directories: vec![directory_change(destination, None, Some(tree))],
             files: vec![
                 authority,

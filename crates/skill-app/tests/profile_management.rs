@@ -12,6 +12,26 @@ fn change() -> ProfileChangeRequest {
     }
 }
 #[test]
+fn alias_cannot_authorize_a_private_hub_directory_as_agent_root() {
+    let (app, _, _, _) = ready();
+    let private = app.context.env.home.join(".skill-hub/internal");
+    fs::create_dir_all(&private).unwrap();
+    let alias = app.context.env.home.join(".alias");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(&private, &alias).unwrap();
+    #[cfg(windows)]
+    assert!(std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(&alias)
+        .arg(&private)
+        .output().unwrap().status.success());
+    let mut p = profile("custom.fifth");
+    p["roots"][0]["relative"] = serde_json::json!(".alias");
+    let mut req = change();
+    req.profile_json = bytes(&p);
+    assert!(app.preview_agent_profile(req).is_err());
+}
+#[test]
 fn profile_save_alone_never_distributes_skills() {
     let (app, _, library, target) = ready();
     let preview = app.preview_agent_profile(change()).unwrap();

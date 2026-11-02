@@ -41,6 +41,7 @@ pub fn fixture() -> (IoEngine, PathBuf) {
             audit_path: root.join("hub/audit/events.jsonl"),
             write_roots: vec![root.join("agent/skills")],
             write_files: vec![],
+            write_file_roots: vec![],
             scan_roots: vec![root.join("agent/skills")],
             protected_roots: vec![root.join("hub")],
             observer: Arc::new(Quiet),

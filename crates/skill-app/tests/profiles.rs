@@ -294,6 +294,7 @@ fn incomplete_override_evidence_retains_known_builtin_reader() {
     let document = bytes(&p);
     let mut registry = load_registry(&source(&env, vec![document.clone()]), &env).unwrap();
     registry.approvals.push(Approval {
+        root_proofs: None,
         id: AgentId::parse("grok").unwrap(),
         document,
         platform: env.platform,
