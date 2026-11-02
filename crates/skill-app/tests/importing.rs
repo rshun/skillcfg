@@ -102,3 +102,8 @@ fn replacement_retains_previous_revision_in_central_backup() {
         .join(old)
         .exists());
 }
+
+#[test]
+fn importing_beyond_catalog_limit_is_rejected_before_writes(){
+ let(app,source,library,_)=ready();let id=import(&app,&source,&library);let path=library.join("catalog.json");let mut catalog:serde_json::Value=serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();let template=catalog["records"][0].clone();let revision=template["currentRevision"].as_str().unwrap();for n in 1..1024{let mut record=template.clone();let id=format!("fixture-{n}");record["id"]=serde_json::json!(id);let dest=library.join("packages").join(&id).join("revisions").join(revision);fs::create_dir_all(&dest).unwrap();fs::copy(source.join("SKILL.md"),dest.join("SKILL.md")).unwrap();catalog["records"].as_array_mut().unwrap().push(record);}let before=serde_json::to_vec(&catalog).unwrap();fs::write(&path,&before).unwrap();assert_eq!(app.load_library(&library).unwrap().records.len(),1024);let scan=app.scan_import(ImportRequest{source,library_path:library.clone()}).unwrap();assert!(app.preview_import(&scan.scan_id,&[ImportChoice{item_id:scan.items[0].item_id.clone(),action:ImportAction::New}]).is_err());assert_eq!(fs::read(path).unwrap(),before);assert!(library.join("packages").join(id).exists());
+}

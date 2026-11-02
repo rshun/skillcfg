@@ -17,6 +17,7 @@ fn real_crash_child() {
     if let Some(root) = std::env::var_os("SKILL_HUB_CRASH_ROOT") {
         let root = std::path::PathBuf::from(root);
         let mut engine = engine_at(&root);
+        if let Some(backup)=std::env::var_os("SKILL_HUB_BACKUP_ROOT"){engine.backup_root=backup.into();}
         engine.observer = Arc::new(ExitAt(
             if std::env::var_os("SKILL_HUB_AUDIT_CRASH").is_some() {Step::Audit} else if std::env::var_os("SKILL_HUB_PREPARE_CRASH").is_some() {
                 Step::BackedUp
@@ -225,3 +226,11 @@ impl Observer for DenyRename{fn event(&self,step:Step,path:&Path)->Result<(),IoE
 #[cfg(windows)]
 #[test]
 fn windows_rename_failure_keeps_original_and_backup(){let(mut engine,target)=fixture();engine.observer=Arc::new(DenyRename(std::sync::Mutex::new(None)));let receipt=engine.apply(engine.prepare(&plan(&target,Some(tree("old")),Some(tree("new")))).unwrap());assert_eq!(fs::read(target.join("SKILL.md")).unwrap(),document("old"));assert!(receipt.outcomes.iter().any(|i|matches!(i.outcome,Outcome::RecoveryRequired|Outcome::FailedRestored|Outcome::Blocked)));assert!(receipt.backup_location.join("original/0/SKILL.md").exists());}
+
+#[cfg(target_os="linux")]
+#[test]
+fn cross_filesystem_backup_releases_lock_and_recovers_real_crash(){
+ use std::os::unix::fs::MetadataExt;let(mut engine,target)=fixture();let root=engine.backup_root.parent().unwrap().parent().unwrap().to_owned();let backup=std::path::PathBuf::from("/dev/shm").join(skill_io::disk::operation_id());fs::create_dir(&backup).unwrap();assert_ne!(fs::metadata(&root).unwrap().dev(),fs::metadata(&backup).unwrap().dev());engine.backup_root=backup;
+ let receipt=engine.apply(engine.prepare(&plan(&target,Some(tree("old")),Some(tree("new")))).unwrap());assert!(receipt.outcomes.iter().all(|o|o.outcome==Outcome::Written));assert!(!root.join("hub/write.lock").exists());
+ let restore=engine.plan_restore(&receipt.operation_id).unwrap();engine.apply(engine.prepare(&restore).unwrap());let status=std::process::Command::new(std::env::current_exe().unwrap()).args(["--exact","real_crash_child"]).env("SKILL_HUB_CRASH_ROOT",&root).env("SKILL_HUB_BACKUP_ROOT",&engine.backup_root).status().unwrap();assert_eq!(status.code(),Some(71));let records=engine.list_recoveries().unwrap();assert_eq!(records.len(),1);let restore=engine.plan_restore(&records[0].operation_id).unwrap();let receipt=engine.apply(engine.prepare(&restore).unwrap());assert!(receipt.backup_location.join("recovered.lock").exists());assert_eq!(fs::read(target.join("SKILL.md")).unwrap(),document("old"));assert!(!root.join("hub/write.lock").exists());
+}
