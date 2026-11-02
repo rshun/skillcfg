@@ -63,6 +63,14 @@ jobs:
         run: cargo test --workspace --locked --no-fail-fast
       - name: Platform-specific Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Build stage-two CLI in GitHub
+        run: cargo build --release --locked -p skill-cli
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: skill-hub-${{ matrix.os }}-${{ runner.arch }}
+          path: target/release/skill-hub${{ matrix.os == 'windows-2022' && '.exe' || '' }}
+          if-no-files-found: error
+          retention-days: 14
 
   quality:
     needs: lockfile

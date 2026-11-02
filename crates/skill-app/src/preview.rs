@@ -112,18 +112,6 @@ impl App {
         })
     }
     pub(crate) fn stamp(&self)->Result<Stamp,AppError>{self.snapshot(None)}
-    pub(crate) fn install(
-        &self,
-        kind: &'static str,
-        plan: MutationPlan,
-        bindings: Vec<TreeBinding>,
-        engine: IoEngine,
-        outcomes: Vec<SafeOutcome>,
-        blocked: bool,
-    ) -> Result<(String, u64), AppError> {
-        let stamp=self.stamp()?;
-        self.install_bound(kind,plan,bindings,engine,outcomes,blocked,stamp,None,vec![])
-    }
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn install_bound(&self,kind:&'static str,plan:MutationPlan,bindings:Vec<TreeBinding>,engine:IoEngine,outcomes:Vec<SafeOutcome>,blocked:bool,stamp:Stamp,context_override:Option<crate::binding::ContextOverride>,auxiliary:Vec<crate::binding::FileBinding>)->Result<(String,u64),AppError>{
         self.state.borrow_mut().preview = None;

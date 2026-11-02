@@ -52,6 +52,6 @@ pub struct App {
 }
 impl App {
     pub fn new(context: AppContext) -> Self {
-        Self::with_clock(context, std::sync::Arc::new(SystemClock))
+        Self::with_clock(context, std::sync::Arc::new(SystemClock::default()))
     }
 }
