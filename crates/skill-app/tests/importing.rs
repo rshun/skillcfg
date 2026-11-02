@@ -71,7 +71,7 @@ fn sensitive_source_and_library_overlap_are_rejected() {
 
 #[test]
 fn replacement_retains_previous_revision_in_central_backup(){
- let (app,source,library,_)=ready();let id=import(&app,&source,&library);let view=app.load_library(&library).unwrap();let old=view.records[0].current_revision.clone();
- fs::write(source.join("extra"),b"new").unwrap();let scan=app.scan_import(ImportRequest{source,library_path:library.clone()}).unwrap();let preview=app.preview_import(&scan.scan_id,&[ImportChoice{item_id:scan.items[0].item_id.clone(),action:ImportAction::Replace(id)}]).unwrap();let receipt=app.commit_import(&preview.preview_id).unwrap();
+ let (app,source,library,_)=ready();fs::write(source.join("asset.bin"),[0,255]).unwrap();let id=import(&app,&source,&library);let view=app.load_library(&library).unwrap();let old=view.records[0].current_revision.clone();
+ fs::write(source.join("extra"),b"new").unwrap();let scan=app.scan_import(ImportRequest{source,library_path:library.clone()}).unwrap();let preview=app.preview_import(&scan.scan_id,&[ImportChoice{item_id:scan.items[0].item_id.clone(),action:ImportAction::Replace(skill_core::plan::PackageId(id))}]).unwrap();let receipt=app.commit_import(&preview.preview_id).unwrap();
  let backup=std::path::PathBuf::from(receipt.backup_location);assert!(backup.join("retained/0/asset.bin").exists());assert!(library.join("packages").join(&view.records[0].id).join("revisions").join(old).exists());
 }

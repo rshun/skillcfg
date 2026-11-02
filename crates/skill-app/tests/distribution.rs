@@ -81,3 +81,20 @@ fn identical_target_and_cancelled_preview_have_no_write() {
         .all(|i| i.outcome == skill_io::Outcome::Unchanged));
     assert_eq!(app.list_history().unwrap().len(), count);
 }
+
+#[test]
+fn binary_source_change_and_probe_change_invalidate_whole_preview(){
+ for binary in [true,false]{
+ let (base,source,library,target)=ready();let mut p=profile("codex");p["probes"]=serde_json::json!([{"probeId":"enabled","base":"home","relative":"probe.json","format":"json","keyPath":["enabled"],"expected":true,"onMissing":"unknown"}]);let env=base.context.env;fs::write(env.home.join("probe.json"),br#"{"enabled":true}"#).unwrap();let registry=load_registry(&service_support::source(&env,vec![bytes(&p)]),&env).unwrap();let app=service_support::app(env,registry,skill_core::Scope::User);
+ fs::write(source.join("asset.bin"),[0,255]).unwrap();let id=import(&app,&source,&library);let preview=app.preview_distribution(request(&id,&library)).unwrap();
+ if binary{let records=app.load_library(&library).unwrap();let revision=&records.records[0].current_revision;fs::write(library.join("packages").join(&id).join("revisions").join(revision).join("asset.bin"),[0,254]).unwrap();}else{fs::write(app.context.env.home.join("probe.json"),br#"{"enabled":false}"#).unwrap();}
+ assert!(app.commit_distribution(&preview.preview_id).is_err());assert!(!target.exists());
+ }
+}
+#[test]
+fn redirected_target_parent_invalidates_preview(){
+ let (app,source,library,target)=ready();let id=import(&app,&source,&library);let preview=app.preview_distribution(request(&id,&library)).unwrap();let parent=target.parent().unwrap();fs::create_dir_all(parent.parent().unwrap()).unwrap();let elsewhere=app.context.env.home.join("elsewhere");fs::create_dir_all(&elsewhere).unwrap();
+ #[cfg(unix)] std::os::unix::fs::symlink(&elsewhere,parent).unwrap();
+ #[cfg(windows)] assert!(std::process::Command::new("cmd").args(["/C","mklink","/J"]).arg(parent).arg(&elsewhere).output().unwrap().status.success());
+ assert!(app.commit_distribution(&preview.preview_id).is_err());assert!(!elsewhere.join("review").exists());
+}
