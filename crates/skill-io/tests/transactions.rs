@@ -99,3 +99,8 @@ fn file_commit_follows_directory_commit_and_checks_baseline() {
         .all(|i| i.outcome == Outcome::Written));
     assert_eq!(fs::read(catalog).unwrap(), b"new");
 }
+
+#[test]
+fn failed_metadata_commit_blocks_later_commit_pointer(){
+ let(mut engine,target)=fixture();let root=engine.backup_root.parent().unwrap();let profile=root.join("profile.json");let approval=root.join("approval.json");fs::write(&profile,b"old").unwrap();fs::write(&approval,b"old approval").unwrap();engine.write_files=vec![profile.clone(),approval.clone()];let changes=MutationPlan{files:vec![FileChange{path:profile.clone(),before:Some(b"old".to_vec()),after:Some(b"new".to_vec())},FileChange{path:approval.clone(),before:Some(b"old approval".to_vec()),after:Some(b"new approval".to_vec())}],kind:"profile".into(),..Default::default()};let prepared=engine.prepare(&changes).unwrap();fs::write(profile,b"external").unwrap();let receipt=engine.apply(prepared);assert_eq!(fs::read(approval).unwrap(),b"old approval");assert!(receipt.outcomes.iter().any(|i|i.outcome==Outcome::Blocked));assert!(target.exists());
+}

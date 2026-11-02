@@ -18,7 +18,7 @@ fn real_crash_child() {
         let root = std::path::PathBuf::from(root);
         let mut engine = engine_at(&root);
         engine.observer = Arc::new(ExitAt(
-            if std::env::var_os("SKILL_HUB_PREPARE_CRASH").is_some() {
+            if std::env::var_os("SKILL_HUB_AUDIT_CRASH").is_some() {Step::Audit} else if std::env::var_os("SKILL_HUB_PREPARE_CRASH").is_some() {
                 Step::BackedUp
             } else {
                 Step::Archived
@@ -198,4 +198,9 @@ fn one_group_failure_does_not_hide_other_success() {
         .outcomes
         .iter()
         .any(|i| i.path == other && i.outcome == Outcome::Written));
+}
+
+#[test]
+fn verified_operation_with_stale_lock_is_reported_for_recovery(){
+ let(engine,target)=fixture();let root=engine.backup_root.parent().unwrap().parent().unwrap();let status=std::process::Command::new(std::env::current_exe().unwrap()).args(["--exact","real_crash_child"]).env("SKILL_HUB_CRASH_ROOT",root).env("SKILL_HUB_AUDIT_CRASH","1").status().unwrap();assert_eq!(status.code(),Some(71));assert_eq!(fs::read(target.join("SKILL.md")).unwrap(),document("new"));let records=engine.list_recoveries().unwrap();assert_eq!(records.len(),1);let restore=engine.plan_restore(&records[0].operation_id).unwrap();engine.apply(engine.prepare(&restore).unwrap());assert_eq!(fs::read(target.join("SKILL.md")).unwrap(),document("old"));
 }

@@ -203,7 +203,11 @@ impl App {
         {
             return Err(error("preview_changed"));
         }
-        if p.plan.directories.is_empty() && p.plan.files.is_empty() && p.plan.recovery_lock.is_none() && !p.plan.metadata.contains_key("abandonPreparation") {
+        if p.plan.directories.is_empty()
+            && p.plan.files.is_empty()
+            && p.plan.recovery_lock.is_none()
+            && !p.plan.metadata.contains_key("abandonPreparation")
+        {
             return Ok(ReceiptDto {
                 operation_id: String::new(),
                 backup_location: String::new(),

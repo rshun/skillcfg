@@ -57,7 +57,7 @@ pub struct RecoveryRecord {
     pub paths: Vec<PathBuf>,
     pub reason: Option<String>,
 }
-pub type HistoryDetails = Vec<(MutationReceipt,std::collections::BTreeMap<String,String>)>;
+pub type HistoryDetails = Vec<(MutationReceipt, std::collections::BTreeMap<String, String>)>;
 pub struct RestoreSources {
     pub directories: Vec<PathBuf>,
     pub files: Vec<PathBuf>,
@@ -216,7 +216,7 @@ impl IoEngine {
         }
         let mut effective = MutationPlan {
             kind: plan.kind.clone(),
-            recovery_lock:plan.recovery_lock.clone(),
+            recovery_lock: plan.recovery_lock.clone(),
             metadata: plan.metadata.clone(),
             ..Default::default()
         };
@@ -304,7 +304,10 @@ impl IoEngine {
                 item.baseline_key = Some(crate::paths::physical_key(&item.path)?);
             }
         }
-        if items.is_empty() && plan.recovery_lock.is_none() && !plan.metadata.contains_key("abandonPreparation") {
+        if items.is_empty()
+            && plan.recovery_lock.is_none()
+            && !plan.metadata.contains_key("abandonPreparation")
+        {
             return Ok(PreparedMutation {
                 inner: None,
                 unchanged,
@@ -317,7 +320,7 @@ impl IoEngine {
         }
         let location = resolved_path(&self.backup_root)?.join(&id);
         directories(location.parent().ok_or(err("invalid_path"))?)?;
-        let initializing=location.with_file_name(format!(".initializing-{id}"));
+        let initializing = location.with_file_name(format!(".initializing-{id}"));
         new_directory(&initializing)?;
         let lock_path = resolved_path(&self.audit_path)?
             .parent()
@@ -334,11 +337,33 @@ impl IoEngine {
             receipt: None,
             metadata: plan.metadata.clone(),
         };
-        persist(&initializing,&journal)?;
-        fs::rename(&initializing,&location).map_err(|_|err("backup_publish_failed"))?;
+        persist(&initializing, &journal)?;
+        fs::rename(&initializing, &location).map_err(|_| err("backup_publish_failed"))?;
         sync_parent(&location)?;
-        if let Some(evidence)=&plan.recovery_lock {if !plan.kind.strip_prefix("restore:").is_some_and(|id|evidence.matches(id)){journal.state="aborted".into();persist(&location,&journal)?;return Err(err("invalid_recovery_lock"));}}
-        let lock=match Lock::acquire(&lock_path,&location.join("released.lock"),&journal.id,plan.recovery_lock.as_ref()) {Ok(lock)=>lock,Err(e)=>{journal.state="aborted".into();persist(&location,&journal)?;return Err(e);}};
+        if let Some(evidence) = &plan.recovery_lock {
+            if !plan
+                .kind
+                .strip_prefix("restore:")
+                .is_some_and(|id| evidence.matches(id))
+            {
+                journal.state = "aborted".into();
+                persist(&location, &journal)?;
+                return Err(err("invalid_recovery_lock"));
+            }
+        }
+        let lock = match Lock::acquire(
+            &lock_path,
+            &location.join("released.lock"),
+            &journal.id,
+            plan.recovery_lock.as_ref(),
+        ) {
+            Ok(lock) => lock,
+            Err(e) => {
+                journal.state = "aborted".into();
+                persist(&location, &journal)?;
+                return Err(e);
+            }
+        };
         let result = (|| {
             for (i, c) in effective.directories.iter().enumerate() {
                 if let Some(t) = &c.before {
@@ -490,7 +515,15 @@ impl IoEngine {
                 }
             }
         }
-        if let Err(error)=p._lock.release(){receipt.outcomes.push(ItemReceipt{path:lock_path(&p.engine).unwrap_or_else(|_|p.engine.audit_path.clone()),outcome:Outcome::AuditFailed,reason:Some(error.code.into())});p.journal.receipt=Some(receipt.clone());let _=persist(&p.location,&p.journal);}
+        if let Err(error) = p._lock.release() {
+            receipt.outcomes.push(ItemReceipt {
+                path: lock_path(&p.engine).unwrap_or_else(|_| p.engine.audit_path.clone()),
+                outcome: Outcome::AuditFailed,
+                reason: Some(error.code.into()),
+            });
+            p.journal.receipt = Some(receipt.clone());
+            let _ = persist(&p.location, &p.journal);
+        }
         receipt
     }
     fn read_manifest(&self, id: &str) -> Result<(PathBuf, Journal), IoError> {
@@ -548,7 +581,9 @@ impl IoEngine {
                 .file_name()
                 .into_string()
                 .map_err(|_| err("invalid_backup"))?;
-            if id.starts_with(".initializing-"){continue;}
+            if id.starts_with(".initializing-") {
+                continue;
+            }
             let record = self.read_manifest(&id)?;
             metadata_bytes = metadata_bytes.saturating_add(
                 serde_json::to_vec(&record.1)
@@ -563,9 +598,7 @@ impl IoEngine {
         records.sort_by(|a, b| a.1.id.cmp(&b.1.id));
         Ok(records)
     }
-    pub fn history_details(
-        &self,
-    ) -> Result<HistoryDetails, IoError> {
+    pub fn history_details(&self) -> Result<HistoryDetails, IoError> {
         Ok(self
             .journals()?
             .into_iter()
@@ -584,7 +617,9 @@ impl IoEngine {
             directories: vec![],
             files: vec![],
         };
-        if matches!(j.state.as_str(),"preparing"|"aborted"){return Ok(result);}
+        if matches!(j.state.as_str(), "preparing" | "aborted") {
+            return Ok(result);
+        }
         let mut di = 0;
         let mut fi = 0;
         for item in j.items {
@@ -627,14 +662,20 @@ impl IoEngine {
                 operation_id: j.id,
                 kind: j.kind,
                 state: j.state,
-                paths: j.items.into_iter().flat_map(|i|[i.path,i.work]).chain([location]).chain(lock_path(self).ok()).collect(),
+                paths: j
+                    .items
+                    .into_iter()
+                    .flat_map(|i| [i.path, i.work])
+                    .chain([location])
+                    .chain(lock_path(self).ok())
+                    .collect(),
                 reason: Some("explicit_recovery_required".into()),
             })
             .collect())
     }
     pub fn plan_restore(&self, id: &str) -> Result<MutationPlan, IoError> {
         let (location, journal) = self.manifest(id)?;
-        let recovery_lock=crate::lock::probe(&lock_path(self)?,id)?;
+        let recovery_lock = crate::lock::probe(&lock_path(self)?, id)?;
         let mut plan = MutationPlan {
             kind: format!("restore:{id}"),
             recovery_lock,
@@ -647,7 +688,11 @@ impl IoEngine {
                 .ok_or(err("non_utf8_path"))?
                 .to_owned(),
         );
-        if matches!(journal.state.as_str(),"preparing"|"aborted") {plan.metadata.insert("abandonPreparation".into(),"true".into());return Ok(plan);}
+        if matches!(journal.state.as_str(), "preparing" | "aborted") {
+            plan.metadata
+                .insert("abandonPreparation".into(), "true".into());
+            return Ok(plan);
+        }
         let mut di = 0;
         let mut fi = 0;
         let mut restored_bytes = 0usize;
@@ -860,4 +905,10 @@ fn audit(path: &Path, receipt: &MutationReceipt) -> Result<(), IoError> {
         .map_err(|_| err("audit_failed"))
 }
 
-fn lock_path(engine:&IoEngine)->Result<PathBuf,IoError>{Ok(resolved_path(&engine.audit_path)?.parent().and_then(Path::parent).ok_or(err("invalid_path"))?.join("write.lock"))}
+fn lock_path(engine: &IoEngine) -> Result<PathBuf, IoError> {
+    Ok(resolved_path(&engine.audit_path)?
+        .parent()
+        .and_then(Path::parent)
+        .ok_or(err("invalid_path"))?
+        .join("write.lock"))
+}

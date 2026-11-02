@@ -1,0 +1,30 @@
+{
+  "backupLocation": "BACKUP_PATH",
+  "previewId": "preview-fixture",
+  "expiresAt": 600,
+  "groups": [
+    {
+      "targetKey": "fixture-key",
+      "path": "TARGET_PATH",
+      "disposition": "new",
+      "selectedAgents": [
+        "custom.demo"
+      ],
+      "possibleReaders": [],
+      "files": [
+        {
+          "path": "SKILL.md",
+          "binary": false,
+          "before": null,
+          "after": "---\nname: review\ndescription: Fixture.\n---\n",
+          "beforeBytes": 0,
+          "afterBytes": 48,
+          "truncated": false
+        }
+      ],
+      "reason": null
+    }
+  ],
+  "warnings": [],
+  "blocked": false
+}
