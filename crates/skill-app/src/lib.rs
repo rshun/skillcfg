@@ -3,6 +3,9 @@ pub mod detect;
 pub mod env;
 mod importing;
 mod profiles;
+mod binding;
+mod distribution;
+mod history;
 mod library;
 mod preview;
 pub mod registry;
@@ -10,6 +13,8 @@ pub mod roots;
 pub mod service;
 mod settings;
 pub use service::*;
+pub use distribution::{DistributionRecord,ProfileAtWrite};
+pub use history::HistoryItem;
 
 pub use env::HostEnv;
 pub use registry::{

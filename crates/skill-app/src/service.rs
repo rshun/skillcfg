@@ -1,4 +1,3 @@
-use crate::{App, AppError};
 use skill_core::{
     plan::{ConflictDecision, PackageId, SelectionPair, TargetKey},
     AgentId, Scope,
@@ -107,6 +106,7 @@ pub struct DistributionRequest {
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PreviewDto {
+    pub backup_location: String,
     pub preview_id: String,
     pub expires_at: u64,
     pub groups: Vec<skill_core::diff::SafePlanGroup>,
@@ -148,36 +148,4 @@ pub struct ProfileEnableRequest {
     pub agent_id: AgentId,
     pub enabled: bool,
     pub expected_revision: String,
-}
-impl App {
-    pub fn preview_distribution(&self, _req: DistributionRequest) -> Result<PreviewDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn commit_distribution(&self, _id: &str) -> Result<ReceiptDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn list_history(&self) -> Result<Vec<ReceiptDto>, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn list_recoveries(&self) -> Result<Vec<skill_io::RecoveryRecord>, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn preview_restore(&self, _id: &str) -> Result<PreviewDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
-    pub fn commit_restore(&self, _id: &str) -> Result<ReceiptDto, AppError> {
-        Err(AppError {
-            code: "not_implemented",
-        })
-    }
 }

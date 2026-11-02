@@ -62,15 +62,10 @@ pub(crate) fn directories(path: &Path) -> Result<(), IoError> {
     if let Some(parent) = path.parent() {
         directories(parent)?;
     }
-    fs::create_dir(path).map_err(|_| err("create_directory_failed"))?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700))
-            .map_err(|_| err("permissions_failed"))?;
-    }
+    new_directory(path)?;
     Ok(())
 }
+pub(crate) fn new_directory(path:&Path)->Result<(),IoError>{let mut builder=fs::DirBuilder::new();#[cfg(unix)]{use std::os::unix::fs::DirBuilderExt;builder.mode(0o700);}builder.create(path).map_err(|_|err("create_directory_failed"))}
 pub(crate) fn write_new(path: &Path, bytes: &[u8]) -> Result<(), IoError> {
     let mut options = fs::OpenOptions::new();
     options.write(true).create_new(true);

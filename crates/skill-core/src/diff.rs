@@ -18,6 +18,7 @@ pub struct SafeFileDiff {
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SafePlanGroup {
+    pub target_key: String,
     pub path: String,
     pub disposition: Disposition,
     pub selected_agents: Vec<String>,
@@ -85,6 +86,7 @@ pub fn redacted_plan_dto(plan: &DistributionPlan) -> SafePlanView {
                         .collect()
                 };
                 SafePlanGroup {
+                    target_key: safe_text(&group.key.0),
                     path: safe_text(&group.path.to_string_lossy()),
                     disposition: group.disposition,
                     selected_agents: group

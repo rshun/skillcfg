@@ -105,11 +105,12 @@ impl App {
     pub fn load_library(&self, path: &Path) -> Result<LibraryView, AppError> {
         let loaded = self.checked_library(path)?;
         let mut state = self.state.borrow_mut();
-        if state.library.as_ref() != Some(&loaded.path) {
+        if state.library.as_ref() != Some(&path.to_path_buf()) {
             state.preview = None;
             state.edits.clear();
+            state.scan=None;
         }
-        state.library = Some(loaded.path);
+        state.library = Some(path.to_path_buf());
         Ok(LibraryView {
             first_use: loaded.raw.is_none(),
             records: loaded.catalog.records,
@@ -154,6 +155,7 @@ impl App {
         let mut state = self.state.borrow_mut();
         if state.edits.len() >= 16 || state.edits.values().flat_map(|e|e.bindings.iter()).map(|b|crate::preview::tree_bytes(&b.tree)).sum::<usize>().saturating_add(loaded.bindings.iter().map(|b|crate::preview::tree_bytes(&b.tree)).sum::<usize>())>64*1024*1024 {
             state.edits.clear();
+            state.scan=None;
         }
         state.edits.insert(
             token.clone(),

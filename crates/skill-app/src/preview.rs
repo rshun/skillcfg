@@ -23,6 +23,8 @@ pub(crate) struct EditBaseline {
     pub bindings: Vec<TreeBinding>,
 }
 pub(crate) struct Pending {
+    pub context_override: Option<crate::binding::ContextOverride>,
+    pub auxiliary: Vec<crate::binding::FileBinding>,
     pub id: String,
     pub created: u64,
     pub kind: &'static str,
@@ -35,6 +37,7 @@ pub(crate) struct Pending {
 }
 #[derive(PartialEq, Eq)]
 pub(crate) struct Stamp {
+    pub locations: Vec<(PathBuf, Result<(PathBuf,String),String>)>,
     pub settings: Option<Vec<u8>>,
     pub authority: Option<Vec<u8>>,
     pub registry: Vec<(String, Option<Vec<u8>>)>,
@@ -108,84 +111,7 @@ impl App {
             registry,
         })
     }
-    pub(crate) fn stamp(&self) -> Result<Stamp, AppError> {
-        let settings = skill_io::disk::optional_file(&self.settings_path())?;
-        let ctx = self.runtime_context()?;
-        let mut registry = Vec::new();
-        match std::fs::read_dir(&self.source.custom_dir) {
-            Ok(entries) => {
-                for (n, entry) in entries.enumerate() {
-                    if n > 256 {
-                        return Err(error("too_many_profiles"));
-                    }
-                    let entry = entry.map_err(|_| error("registry_read_failed"))?;
-                    if entry.path().extension().is_some_and(|e| e == "json") {
-                        let name = entry
-                            .file_name()
-                            .into_string()
-                            .map_err(|_| error("invalid_profile_path"))?;
-                        let bytes =
-                            skill_io::snapshot::read_bounded_file(&entry.path(), 256 * 1024).ok();
-                        registry.push((name, bytes));
-                    }
-                }
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(_) => return Err(error("registry_read_failed")),
-        }
-        registry.sort();
-        let approvals = skill_io::disk::optional_file(
-            self.source
-                .approvals_path
-                .as_ref()
-                .ok_or(error("missing_approvals_path"))?,
-        )?;
-        let context = format!(
-            "{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}",
-            ctx.env.home,
-            ctx.env.appdata,
-            ctx.env.xdg_config,
-            ctx.env.project_root,
-            ctx.env.platform,
-            ctx.scope,
-            ctx.registry.selected_variants,
-            self.context.registry.selected_variants
-        );
-        let mut probes = Vec::new();
-        for entry in &ctx.registry.entries {
-            if !matches!(
-                entry.state,
-                ProfileState::Builtin | ProfileState::Enabled | ProfileState::Disabled
-            ) {
-                continue;
-            }
-            if let Some(profile) = &entry.profile {
-                for probe in &profile.probes {
-                    if let Some(base) = ctx.env.base(probe.base) {
-                        let path = base.join(&probe.relative);
-                        let value = skill_io::snapshot::read_bounded_file(&path, 4 * 1024 * 1024)
-                            .map(Some)
-                            .or_else(|e| {
-                                if e.code == "not_found" {
-                                    Ok(None)
-                                } else {
-                                    Err(e.code.to_owned())
-                                }
-                            });
-                        probes.push((path, value));
-                    }
-                }
-            }
-        }
-        Ok(Stamp {
-            settings,
-            authority: skill_io::disk::optional_file(&self.authority_path())?,
-            registry,
-            approvals,
-            context,
-            probes,
-        })
-    }
+    pub(crate) fn stamp(&self)->Result<Stamp,AppError>{self.snapshot(None)}
     pub(crate) fn install(
         &self,
         kind: &'static str,
@@ -195,10 +121,18 @@ impl App {
         outcomes: Vec<SafeOutcome>,
         blocked: bool,
     ) -> Result<(String, u64), AppError> {
+        let stamp=self.stamp()?;
+        self.install_bound(kind,plan,bindings,engine,outcomes,blocked,stamp,None,vec![])
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn install_bound(&self,kind:&'static str,plan:MutationPlan,bindings:Vec<TreeBinding>,engine:IoEngine,outcomes:Vec<SafeOutcome>,blocked:bool,stamp:Stamp,context_override:Option<crate::binding::ContextOverride>,auxiliary:Vec<crate::binding::FileBinding>)->Result<(String,u64),AppError>{
         self.state.borrow_mut().preview = None;
-        let mut bytes = 0usize;
+        let mut bytes = stamp.bytes();
+        for binding in &auxiliary {bytes=bytes.saturating_add(binding.data.as_ref().map_or(0,Vec::len));}
+        for (_,tree) in &plan.retained {bytes=bytes.saturating_add(tree_bytes(tree));}
         for b in &bindings {
-            bytes = bytes.saturating_add(tree_bytes(&b.tree));
+            let represented=plan.directories.iter().any(|c|c.before.as_ref()==Some(&b.tree)||c.after.as_ref()==Some(&b.tree)) || plan.retained.iter().any(|(_,t)|t==&b.tree);
+            if !represented {bytes=bytes.saturating_add(tree_bytes(&b.tree));}
         }
         for c in &plan.directories {
             bytes = bytes
@@ -215,9 +149,11 @@ impl App {
         }
         let id = skill_io::disk::operation_id();
         let created = self.clock.now();
-        let stamp = self.stamp()?;
+        if stamp!=self.snapshot(context_override.as_ref())? || auxiliary.iter().any(|b|!b.matches()) || bindings.iter().any(|b|!b.matches()){return Err(error("preview_changed"));}
         self.state.borrow_mut().preview = Some(Pending {
             id: id.clone(),
+            context_override,
+            auxiliary,
             created,
             kind,
             stamp,
@@ -246,7 +182,7 @@ impl App {
         if p.blocked {
             return Err(error("preview_blocked"));
         }
-        if p.stamp != self.stamp()? || p.bindings.iter().any(|b| !b.matches()) {
+        if p.stamp != self.snapshot(p.context_override.as_ref())? || p.auxiliary.iter().any(|b|!b.matches()) || p.bindings.iter().any(|b| !b.matches()) {
             return Err(error("preview_changed"));
         }
         if p.plan.directories.is_empty() && p.plan.files.is_empty() {
@@ -275,9 +211,10 @@ impl App {
         let mut protected_roots = vec![self.context.env.home.join(".skill-hub/agents")];
         if let Some(library) = library {
             protected_roots.push(library.into());
+            protected_roots.push(skill_io::disk::resolved_path(&self.context.env.home.join(".skill-hub"))?);
         }
         Ok(IoEngine {
-            backup_root: settings.backup_path,
+            backup_root: skill_io::disk::resolved_path(&settings.backup_path)?,
             audit_path: self.context.env.home.join(".skill-hub/audit/events.jsonl"),
             write_roots,
             write_files,
@@ -288,7 +225,7 @@ impl App {
         })
     }
     pub(crate) fn known_roots(&self, ctx: &AppContext) -> Result<Vec<PathBuf>, AppError> {
-        let mut roots = Vec::new();
+        let mut roots = std::collections::BTreeSet::new();
         for entry in &ctx.registry.entries {
             if !matches!(
                 entry.state,
@@ -309,15 +246,14 @@ impl App {
                             .selected_variants
                             .insert(profile.id.clone(), variant.clone());
                         for r in crate::roots::resolve_profile_roots(profile, &local)?.roots {
-                            roots.push(skill_io::disk::resolved_path(&r.path)?);
+                            roots.insert(skill_io::disk::resolved_path(&r.path)?);
+                            if roots.len()>16384{return Err(error("too_many_resolved_roots"));}
                         }
                     }
                 }
             }
         }
-        roots.sort();
-        roots.dedup();
-        Ok(roots)
+        Ok(roots.into_iter().collect())
     }
 }
 pub(crate) fn tree_bytes(tree: &PackageTree) -> usize {

@@ -11,6 +11,16 @@ use std::fs;
 use support::*;
 
 #[test]
+fn known_project_reader_is_reported_for_user_scope_write() {
+    let mut env=env();let project=env.home.join("project");fs::create_dir_all(project.join(".shared")).unwrap();env.project_root=Some(project.clone());
+    let shared=env.home.join(".example/skills");fs::create_dir_all(&shared).unwrap();let alias=project.join(".shared/skills");
+    #[cfg(unix)]std::os::unix::fs::symlink(&shared,&alias).unwrap();
+    #[cfg(windows)]assert!(std::process::Command::new("cmd").args(["/C","mklink","/J"]).arg(&alias).arg(&shared).output().unwrap().status.success());
+    let mut p=profile("codex");p["roots"].as_array_mut().unwrap().push(root("project-compat","project","project",".shared/skills",false));let registry=load_registry(&source(&env,vec![bytes(&p)]),&env).unwrap();
+    let context=app(env,registry,Scope::User).context;let readers=reader_exposures(&shared.join("review"),&context).unwrap();assert!(readers.iter().any(|r|r.root_id=="project-compat"));
+}
+
+#[test]
 fn embedded_profiles_use_the_same_validator_and_resolve_on_each_platform() {
     let mut env = env();
     let project = env.home.join("project");
