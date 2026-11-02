@@ -7,8 +7,21 @@ use std::{collections::BTreeMap, path::PathBuf};
 pub trait Clock: Send + Sync {
     fn now(&self) -> u64;
 }
-pub struct SystemClock { origin:std::time::Instant, epoch:u64 }
-impl Default for SystemClock {fn default()->Self{Self{origin:std::time::Instant::now(),epoch:std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()}}}
+pub struct SystemClock {
+    origin: std::time::Instant,
+    epoch: u64,
+}
+impl Default for SystemClock {
+    fn default() -> Self {
+        Self {
+            origin: std::time::Instant::now(),
+            epoch: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        }
+    }
+}
 impl Clock for SystemClock {
     fn now(&self) -> u64 {
         self.epoch.saturating_add(self.origin.elapsed().as_secs())

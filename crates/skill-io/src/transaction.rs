@@ -16,6 +16,7 @@ pub struct FileChange {
 }
 #[derive(Clone, Default)]
 pub struct MutationPlan {
+    pub recovery_lock: Option<crate::lock::RecoveryLock>,
     pub retained: Vec<(PathBuf, PackageTree)>,
     pub directories: Vec<DirectoryChange>,
     pub files: Vec<FileChange>,
@@ -56,7 +57,11 @@ pub struct RecoveryRecord {
     pub paths: Vec<PathBuf>,
     pub reason: Option<String>,
 }
-pub struct RestoreSources { pub directories:Vec<PathBuf>, pub files:Vec<PathBuf> }
+pub type HistoryDetails = Vec<(MutationReceipt,std::collections::BTreeMap<String,String>)>;
+pub struct RestoreSources {
+    pub directories: Vec<PathBuf>,
+    pub files: Vec<PathBuf>,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
     BackedUp,
@@ -126,8 +131,16 @@ impl IoEngine {
             {
                 return Err(err("unauthorized_target"));
             }
-        } else if !(self.write_files.iter().any(|p| resolved_path(p).is_ok_and(|p| p == actual))
-            || self.write_file_roots.iter().any(|root| resolved_path(root).is_ok_and(|root|actual.parent()==Some(root.as_path()) && actual.extension().is_some_and(|e|e=="json"))))
+        } else if !(self
+            .write_files
+            .iter()
+            .any(|p| resolved_path(p).is_ok_and(|p| p == actual))
+            || self.write_file_roots.iter().any(|root| {
+                resolved_path(root).is_ok_and(|root| {
+                    actual.parent() == Some(root.as_path())
+                        && actual.extension().is_some_and(|e| e == "json")
+                })
+            }))
             || self
                 .scan_roots
                 .iter()
@@ -170,7 +183,8 @@ impl IoEngine {
         Ok(work)
     }
     pub fn prepare(&self, plan: &MutationPlan) -> Result<PreparedMutation, IoError> {
-        if plan.retained.len()>1024 || plan.directories.len() + plan.files.len() > 4096
+        if plan.retained.len() > 1024
+            || plan.directories.len() + plan.files.len() > 4096
             || plan.kind.len() > 128
             || !plan
                 .kind
@@ -194,16 +208,25 @@ impl IoEngine {
                 .saturating_add(change.before.as_ref().map_or(0, Vec::len))
                 .saturating_add(change.after.as_ref().map_or(0, Vec::len));
         }
-        for (_,tree) in &plan.retained { bytes=bytes.saturating_add(tree_size(tree)); }
+        for (_, tree) in &plan.retained {
+            bytes = bytes.saturating_add(tree_size(tree));
+        }
         if bytes > 64 * 1024 * 1024 {
             return Err(err("preview_too_large"));
         }
         let mut effective = MutationPlan {
             kind: plan.kind.clone(),
+            recovery_lock:plan.recovery_lock.clone(),
             metadata: plan.metadata.clone(),
             ..Default::default()
         };
-        for (path,tree) in &plan.retained {let actual=self.target(path,true)?;if optional_tree(&actual)?.as_ref()!=Some(tree){return Err(err("retained_baseline_changed"));}effective.retained.push((actual,tree.clone()));}
+        for (path, tree) in &plan.retained {
+            let actual = self.target(path, true)?;
+            if optional_tree(&actual)?.as_ref() != Some(tree) {
+                return Err(err("retained_baseline_changed"));
+            }
+            effective.retained.push((actual, tree.clone()));
+        }
         for (path, directory, equal) in plan
             .directories
             .iter()
@@ -281,7 +304,7 @@ impl IoEngine {
                 item.baseline_key = Some(crate::paths::physical_key(&item.path)?);
             }
         }
-        if items.is_empty() {
+        if items.is_empty() && plan.recovery_lock.is_none() && !plan.metadata.contains_key("abandonPreparation") {
             return Ok(PreparedMutation {
                 inner: None,
                 unchanged,
@@ -294,15 +317,15 @@ impl IoEngine {
         }
         let location = resolved_path(&self.backup_root)?.join(&id);
         directories(location.parent().ok_or(err("invalid_path"))?)?;
-        new_directory(&location)?;
+        let initializing=location.with_file_name(format!(".initializing-{id}"));
+        new_directory(&initializing)?;
         let lock_path = resolved_path(&self.audit_path)?
             .parent()
             .and_then(Path::parent)
             .ok_or(err("invalid_path"))?
             .join("write.lock");
-        let lock = Lock::acquire(&lock_path, &location.join("released.lock"))?;
         let mut journal = Journal {
-            retained: effective.retained.iter().map(|(p,_)|p.clone()).collect(),
+            retained: effective.retained.iter().map(|(p, _)| p.clone()).collect(),
             version: 1,
             id,
             kind: plan.kind.clone(),
@@ -311,8 +334,12 @@ impl IoEngine {
             receipt: None,
             metadata: plan.metadata.clone(),
         };
+        persist(&initializing,&journal)?;
+        fs::rename(&initializing,&location).map_err(|_|err("backup_publish_failed"))?;
+        sync_parent(&location)?;
+        if let Some(evidence)=&plan.recovery_lock {if !plan.kind.strip_prefix("restore:").is_some_and(|id|evidence.matches(id)){journal.state="aborted".into();persist(&location,&journal)?;return Err(err("invalid_recovery_lock"));}}
+        let lock=match Lock::acquire(&lock_path,&location.join("released.lock"),&journal.id,plan.recovery_lock.as_ref()) {Ok(lock)=>lock,Err(e)=>{journal.state="aborted".into();persist(&location,&journal)?;return Err(e);}};
         let result = (|| {
-            persist(&location, &journal)?;
             for (i, c) in effective.directories.iter().enumerate() {
                 if let Some(t) = &c.before {
                     write_tree(&location.join(format!("original/{i}")), t)?;
@@ -329,7 +356,9 @@ impl IoEngine {
                     write_blob(&location.join(format!("planned-files/{i}")), t)?;
                 }
             }
-            for (i,(_,tree)) in effective.retained.iter().enumerate(){write_tree(&location.join(format!("retained/{i}")),tree)?;}
+            for (i, (_, tree)) in effective.retained.iter().enumerate() {
+                write_tree(&location.join(format!("retained/{i}")), tree)?;
+            }
             for item in &journal.items {
                 self.observer.event(Step::BackedUp, &item.path)?;
             }
@@ -451,14 +480,17 @@ impl IoEngine {
         }
         if p.journal.state == "verified" {
             if let Some(previous) = p.journal.kind.strip_prefix("restore:") {
-                let mut source=self.clone();
-                if let Some(root)=p.plan.metadata.get("restoreBackupRoot"){source.backup_root=PathBuf::from(root);}
+                let mut source = self.clone();
+                if let Some(root) = p.plan.metadata.get("restoreBackupRoot") {
+                    source.backup_root = PathBuf::from(root);
+                }
                 if let Ok((location, mut old)) = source.manifest(previous) {
                     old.state = "resolved".into();
                     let _ = persist(&location, &old);
                 }
             }
         }
+        if let Err(error)=p._lock.release(){receipt.outcomes.push(ItemReceipt{path:lock_path(&p.engine).unwrap_or_else(|_|p.engine.audit_path.clone()),outcome:Outcome::AuditFailed,reason:Some(error.code.into())});p.journal.receipt=Some(receipt.clone());let _=persist(&p.location,&p.journal);}
         receipt
     }
     fn read_manifest(&self, id: &str) -> Result<(PathBuf, Journal), IoError> {
@@ -473,11 +505,17 @@ impl IoEngine {
         if journal.version != 1 || journal.id != id || journal.items.len() > 4096 {
             return Err(err("invalid_journal"));
         }
-        if journal.items.iter().any(|i|!i.path.is_absolute()||!i.work.is_absolute()) {return Err(err("invalid_journal_path"));}
-        Ok((location,journal))
+        if journal
+            .items
+            .iter()
+            .any(|i| !i.path.is_absolute() || !i.work.is_absolute())
+        {
+            return Err(err("invalid_journal_path"));
+        }
+        Ok((location, journal))
     }
-    fn manifest(&self,id:&str)->Result<(PathBuf,Journal),IoError>{
-        let (location,journal)=self.read_manifest(id)?;
+    fn manifest(&self, id: &str) -> Result<(PathBuf, Journal), IoError> {
+        let (location, journal) = self.read_manifest(id)?;
         for (index, item) in journal.items.iter().enumerate() {
             if self.target(&item.path, item.directory)? != item.path
                 || self.work(&item.path, item.directory, id, index)? != item.work
@@ -485,7 +523,12 @@ impl IoEngine {
                 return Err(err("invalid_journal_path"));
             }
         }
-        if journal.retained.len()>1024{return Err(err("invalid_journal"));}for path in &journal.retained{self.target(path,true)?;}
+        if journal.retained.len() > 1024 {
+            return Err(err("invalid_journal"));
+        }
+        for path in &journal.retained {
+            self.target(path, true)?;
+        }
         Ok((location, journal))
     }
     fn journals(&self) -> Result<Vec<(PathBuf, Journal)>, IoError> {
@@ -495,7 +538,7 @@ impl IoEngine {
             Err(_) => return Err(err("backups_unreadable")),
         };
         let mut records = Vec::new();
-        let mut metadata_bytes=0usize;
+        let mut metadata_bytes = 0usize;
         for entry in entries {
             let entry = entry.map_err(|_| err("backups_unreadable"))?;
             if records.len() >= 4096 {
@@ -505,16 +548,69 @@ impl IoEngine {
                 .file_name()
                 .into_string()
                 .map_err(|_| err("invalid_backup"))?;
-            let record=self.read_manifest(&id)?;
-            metadata_bytes=metadata_bytes.saturating_add(serde_json::to_vec(&record.1).map_err(|_|err("invalid_journal"))?.len());
-            if metadata_bytes>64*1024*1024{return Err(err("history_too_large"));}
+            if id.starts_with(".initializing-"){continue;}
+            let record = self.read_manifest(&id)?;
+            metadata_bytes = metadata_bytes.saturating_add(
+                serde_json::to_vec(&record.1)
+                    .map_err(|_| err("invalid_journal"))?
+                    .len(),
+            );
+            if metadata_bytes > 64 * 1024 * 1024 {
+                return Err(err("history_too_large"));
+            }
             records.push(record);
         }
         records.sort_by(|a, b| a.1.id.cmp(&b.1.id));
         Ok(records)
     }
-    pub fn history_details(&self)->Result<Vec<(MutationReceipt,std::collections::BTreeMap<String,String>)>,IoError>{Ok(self.journals()?.into_iter().filter_map(|(_,mut j)|{j.metadata.insert("kind".into(),j.kind.split(':').next().unwrap_or("mutation").to_owned());j.receipt.map(|r|(r,j.metadata))}).collect())}
-    pub fn restore_sources(&self,id:&str)->Result<RestoreSources,IoError>{let (location,j)=self.manifest(id)?;let mut result=RestoreSources{directories:vec![],files:vec![]};let mut di=0;let mut fi=0;for item in j.items{if item.directory{if item.before{result.directories.push(location.join(format!("original/{di}")));}di+=1;}else{if item.before{result.files.push(location.join(format!("original-files/{fi}")));}fi+=1;}}for i in 0..j.retained.len(){result.directories.push(location.join(format!("retained/{i}")));}Ok(result)}
+    pub fn history_details(
+        &self,
+    ) -> Result<HistoryDetails, IoError> {
+        Ok(self
+            .journals()?
+            .into_iter()
+            .filter_map(|(_, mut j)| {
+                j.metadata.insert(
+                    "kind".into(),
+                    j.kind.split(':').next().unwrap_or("mutation").to_owned(),
+                );
+                j.receipt.map(|r| (r, j.metadata))
+            })
+            .collect())
+    }
+    pub fn restore_sources(&self, id: &str) -> Result<RestoreSources, IoError> {
+        let (location, j) = self.manifest(id)?;
+        let mut result = RestoreSources {
+            directories: vec![],
+            files: vec![],
+        };
+        if matches!(j.state.as_str(),"preparing"|"aborted"){return Ok(result);}
+        let mut di = 0;
+        let mut fi = 0;
+        for item in j.items {
+            if item.directory {
+                if item.before {
+                    result
+                        .directories
+                        .push(location.join(format!("original/{di}")));
+                }
+                di += 1;
+            } else {
+                if item.before {
+                    result
+                        .files
+                        .push(location.join(format!("original-files/{fi}")));
+                }
+                fi += 1;
+            }
+        }
+        for i in 0..j.retained.len() {
+            result
+                .directories
+                .push(location.join(format!("retained/{i}")));
+        }
+        Ok(result)
+    }
     pub fn list_history(&self) -> Result<Vec<MutationReceipt>, IoError> {
         Ok(self
             .journals()?
@@ -527,29 +623,53 @@ impl IoEngine {
             .journals()?
             .into_iter()
             .filter(|(_, j)| !matches!(j.state.as_str(), "verified" | "resolved" | "aborted"))
-            .map(|(_, j)| RecoveryRecord {
+            .map(|(location, j)| RecoveryRecord {
                 operation_id: j.id,
                 kind: j.kind,
                 state: j.state,
-                paths: j.items.into_iter().map(|i| i.path).collect(),
+                paths: j.items.into_iter().flat_map(|i|[i.path,i.work]).chain([location]).chain(lock_path(self).ok()).collect(),
                 reason: Some("explicit_recovery_required".into()),
             })
             .collect())
     }
     pub fn plan_restore(&self, id: &str) -> Result<MutationPlan, IoError> {
         let (location, journal) = self.manifest(id)?;
-        if journal.state == "preparing" || journal.state == "aborted" {
-            return Err(err("incomplete_backup"));
-        }
+        let recovery_lock=crate::lock::probe(&lock_path(self)?,id)?;
         let mut plan = MutationPlan {
             kind: format!("restore:{id}"),
+            recovery_lock,
             ..Default::default()
         };
-        plan.metadata.insert("restoreBackupRoot".into(),resolved_path(&self.backup_root)?.to_str().ok_or(err("non_utf8_path"))?.to_owned());
+        plan.metadata.insert(
+            "restoreBackupRoot".into(),
+            resolved_path(&self.backup_root)?
+                .to_str()
+                .ok_or(err("non_utf8_path"))?
+                .to_owned(),
+        );
+        if matches!(journal.state.as_str(),"preparing"|"aborted") {plan.metadata.insert("abandonPreparation".into(),"true".into());return Ok(plan);}
         let mut di = 0;
         let mut fi = 0;
-        let mut restored_bytes=0usize;
-        for (i,path) in journal.retained.iter().enumerate(){let backup=location.join(format!("retained/{i}"));if !resolved_path(&backup)?.starts_with(&location){return Err(err("invalid_backup"));}let tree=optional_tree(&backup)?.ok_or(err("incomplete_backup"))?;let current=optional_tree(path)?;restored_bytes=restored_bytes.saturating_add(tree_size(&tree)).saturating_add(current.as_ref().map_or(0,tree_size));if restored_bytes>64*1024*1024{return Err(err("preview_too_large"));}plan.directories.push(DirectoryChange{path:path.clone(),before:current,after:Some(tree)});}
+        let mut restored_bytes = 0usize;
+        for (i, path) in journal.retained.iter().enumerate() {
+            let backup = location.join(format!("retained/{i}"));
+            if !resolved_path(&backup)?.starts_with(&location) {
+                return Err(err("invalid_backup"));
+            }
+            let tree = optional_tree(&backup)?.ok_or(err("incomplete_backup"))?;
+            let current = optional_tree(path)?;
+            restored_bytes = restored_bytes
+                .saturating_add(tree_size(&tree))
+                .saturating_add(current.as_ref().map_or(0, tree_size));
+            if restored_bytes > 64 * 1024 * 1024 {
+                return Err(err("preview_too_large"));
+            }
+            plan.directories.push(DirectoryChange {
+                path: path.clone(),
+                before: current,
+                after: Some(tree),
+            });
+        }
         for item in journal.items {
             if item.directory {
                 let original = if item.before {
@@ -561,8 +681,13 @@ impl IoEngine {
                 } else {
                     None
                 };
-                let current=optional_tree(&item.path)?;
-                restored_bytes=restored_bytes.saturating_add(current.as_ref().map_or(0,tree_size)).saturating_add(original.as_ref().map_or(0,tree_size));if restored_bytes>64*1024*1024{return Err(err("preview_too_large"));}
+                let current = optional_tree(&item.path)?;
+                restored_bytes = restored_bytes
+                    .saturating_add(current.as_ref().map_or(0, tree_size))
+                    .saturating_add(original.as_ref().map_or(0, tree_size));
+                if restored_bytes > 64 * 1024 * 1024 {
+                    return Err(err("preview_too_large"));
+                }
                 plan.directories.push(DirectoryChange {
                     path: item.path.clone(),
                     before: current,
@@ -571,16 +696,21 @@ impl IoEngine {
                 di += 1;
             } else {
                 let original = if item.before {
-                    let path=location.join(format!("original-files/{fi}"));if !resolved_path(&path)?.starts_with(&location){return Err(err("invalid_backup"));}
-                    Some(crate::snapshot::read_bounded_file(
-                        &path,
-                        64 * 1024 * 1024,
-                    )?)
+                    let path = location.join(format!("original-files/{fi}"));
+                    if !resolved_path(&path)?.starts_with(&location) {
+                        return Err(err("invalid_backup"));
+                    }
+                    Some(crate::snapshot::read_bounded_file(&path, 64 * 1024 * 1024)?)
                 } else {
                     None
                 };
-                let current=optional_file(&item.path)?;
-                restored_bytes=restored_bytes.saturating_add(current.as_ref().map_or(0,Vec::len)).saturating_add(original.as_ref().map_or(0,Vec::len));if restored_bytes>64*1024*1024{return Err(err("preview_too_large"));}
+                let current = optional_file(&item.path)?;
+                restored_bytes = restored_bytes
+                    .saturating_add(current.as_ref().map_or(0, Vec::len))
+                    .saturating_add(original.as_ref().map_or(0, Vec::len));
+                if restored_bytes > 64 * 1024 * 1024 {
+                    return Err(err("preview_too_large"));
+                }
                 plan.files.push(FileChange {
                     path: item.path.clone(),
                     before: current,
@@ -627,10 +757,11 @@ fn baseline(p: &Prepared, index: usize) -> Result<(), IoError> {
     Ok(())
 }
 fn commit_item(p: &mut Prepared, index: usize) -> Result<(), IoError> {
+    p._lock.valid()?;
     baseline(p, index)?;
     let item = p.journal.items[index].clone();
     directories(item.path.parent().ok_or(err("invalid_path"))?)?;
-    if item.directory && item.before || !item.directory && item.before && !item.after {
+    if item.before && (item.directory || !item.after) {
         p.journal.items[index].state = "archive_pending".into();
         persist(&p.location, &p.journal)?;
         fs::rename(&item.path, item.work.join("original")).map_err(|_| err("archive_failed"))?;
@@ -728,3 +859,5 @@ fn audit(path: &Path, receipt: &MutationReceipt) -> Result<(), IoError> {
         .and_then(|_| file.sync_all())
         .map_err(|_| err("audit_failed"))
 }
+
+fn lock_path(engine:&IoEngine)->Result<PathBuf,IoError>{Ok(resolved_path(&engine.audit_path)?.parent().and_then(Path::parent).ok_or(err("invalid_path"))?.join("write.lock"))}

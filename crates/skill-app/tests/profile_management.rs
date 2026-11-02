@@ -24,7 +24,10 @@ fn alias_cannot_authorize_a_private_hub_directory_as_agent_root() {
         .args(["/C", "mklink", "/J"])
         .arg(&alias)
         .arg(&private)
-        .output().unwrap().status.success());
+        .output()
+        .unwrap()
+        .status
+        .success());
     let mut p = profile("custom.fifth");
     p["roots"][0]["relative"] = serde_json::json!(".alias");
     let mut req = change();

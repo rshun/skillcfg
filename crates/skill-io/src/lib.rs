@@ -7,3 +7,5 @@ pub mod snapshot;
 pub mod transaction;
 pub use snapshot::{read_package_snapshot, IoError, PackageSnapshot, ScanLimits};
 pub use transaction::*;
+
+pub use lock::RecoveryLock;

@@ -97,8 +97,7 @@ impl App {
                             item.sources.push(path);
                             continue;
                         }
-                        let validation =
-                            validate_package(&snapshot.tree, context.env.platform);
+                        let validation = validate_package(&snapshot.tree, context.env.platform);
                         let metadata = if validation.is_empty() {
                             snapshot.tree.entries.iter().find_map(|e| {
                                 if e.relative_path == "SKILL.md" {

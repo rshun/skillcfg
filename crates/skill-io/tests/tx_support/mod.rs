@@ -9,7 +9,18 @@ use std::{
 pub fn document(body: &str) -> Vec<u8> {
     format!("---\nname: review\ndescription: Fixture.\n---\n{body}").into_bytes()
 }
-pub fn engine_at(root:&Path)->IoEngine{IoEngine{backup_root:root.join("hub/backups"),audit_path:root.join("hub/audit/events.jsonl"),write_roots:vec![root.join("agent/skills")],write_files:vec![],write_file_roots:vec![],scan_roots:vec![root.join("agent/skills")],protected_roots:vec![root.join("hub")],observer:Arc::new(Quiet)}}
+pub fn engine_at(root: &Path) -> IoEngine {
+    IoEngine {
+        backup_root: root.join("hub/backups"),
+        audit_path: root.join("hub/audit/events.jsonl"),
+        write_roots: vec![root.join("agent/skills")],
+        write_files: vec![],
+        write_file_roots: vec![],
+        scan_roots: vec![root.join("agent/skills")],
+        protected_roots: vec![root.join("hub")],
+        observer: Arc::new(Quiet),
+    }
+}
 pub fn tree(body: &str) -> PackageTree {
     PackageTree {
         entries: vec![TreeEntry {

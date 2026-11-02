@@ -100,7 +100,7 @@ impl App {
         choices: &[ImportChoice],
     ) -> Result<PreviewDto, AppError> {
         self.state.borrow_mut().preview = None;
-        let stamp=self.stamp()?;
+        let stamp = self.stamp()?;
         let scan = self
             .state
             .borrow_mut()
@@ -227,7 +227,9 @@ impl App {
                 bindings.push(item.binding);
             }
         }
-        let auxiliary=vec![crate::binding::FileBinding::read(scan.library.path.join("catalog.json"))?];
+        let auxiliary = vec![crate::binding::FileBinding::read(
+            scan.library.path.join("catalog.json"),
+        )?];
         let engine = self.engine(
             vec![scan.library.path.join("packages")],
             vec![
@@ -236,10 +238,13 @@ impl App {
             ],
             None,
         )?;
-        let (preview_id, expires_at) =
-            self.install_bound("import", plan, bindings, engine, outcomes, false,stamp,None,auxiliary)?;
+        let (preview_id, expires_at) = self.install_bound(
+            "import", plan, bindings, engine, outcomes, false, stamp, None, auxiliary,
+        )?;
         Ok(PreviewDto {
-            backup_location: skill_core::compatibility::safe_text(&self.settings_data()?.0.backup_path.to_string_lossy()),
+            backup_location: skill_core::compatibility::safe_text(
+                &self.settings_data()?.0.backup_path.to_string_lossy(),
+            ),
             preview_id,
             expires_at,
             groups: skill_core::diff::redacted_plan_dto(&view).groups,

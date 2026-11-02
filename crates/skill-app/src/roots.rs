@@ -98,7 +98,11 @@ pub fn resolve_profile_roots(
                         break;
                     }
                     bases.push(parent.clone());
-                    if bases.len()>256{return Err(AppError{code:"too_many_project_ancestors"});}
+                    if bases.len() > 256 {
+                        return Err(AppError {
+                            code: "too_many_project_ancestors",
+                        });
+                    }
                 }
             }
         }
@@ -124,10 +128,22 @@ pub fn resolve_profile_roots(
                 result.issues.push("protected_root");
                 continue;
             }
-            let actual=match skill_io::disk::resolved_path(&path){Ok(p)=>p,Err(_)=>{result.issues.push("root_resolution_failed");continue;}};
-            let home=skill_io::disk::resolved_path(&ctx.env.home)?;
-            let private=skill_io::disk::resolved_path(&ctx.env.home.join(".skill-hub"))?;
-            if actual==home || actual.starts_with(private) || project.as_ref().is_some_and(|p|p==&actual){result.issues.push("protected_root");continue;}
+            let actual = match skill_io::disk::resolved_path(&path) {
+                Ok(p) => p,
+                Err(_) => {
+                    result.issues.push("root_resolution_failed");
+                    continue;
+                }
+            };
+            let home = skill_io::disk::resolved_path(&ctx.env.home)?;
+            let private = skill_io::disk::resolved_path(&ctx.env.home.join(".skill-hub"))?;
+            if actual == home
+                || actual.starts_with(private)
+                || project.as_ref().is_some_and(|p| p == &actual)
+            {
+                result.issues.push("protected_root");
+                continue;
+            }
             result.roots.push(ResolvedRoot {
                 agent: profile.id.clone(),
                 variant: variant.clone(),
@@ -226,7 +242,7 @@ pub fn reader_exposures(path: &Path, ctx: &AppContext) -> Result<Vec<ReaderExpos
                 .registry
                 .selected_variants
                 .insert(profile.id.clone(), variant.clone());
-            let scopes = if ctx.scope == Scope::Project {
+            let scopes = if ctx.env.project_root.is_some() {
                 vec![Scope::User, Scope::Project]
             } else {
                 vec![Scope::User]

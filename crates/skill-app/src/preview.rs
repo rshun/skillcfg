@@ -37,7 +37,7 @@ pub(crate) struct Pending {
 }
 #[derive(PartialEq, Eq)]
 pub(crate) struct Stamp {
-    pub locations: Vec<(PathBuf, Result<(PathBuf,String),String>)>,
+    pub locations: Vec<(PathBuf, Result<(PathBuf, String), String>)>,
     pub settings: Option<Vec<u8>>,
     pub authority: Option<Vec<u8>>,
     pub registry: Vec<(String, Option<Vec<u8>>)>,
@@ -111,16 +111,38 @@ impl App {
             registry,
         })
     }
-    pub(crate) fn stamp(&self)->Result<Stamp,AppError>{self.snapshot(None)}
+    pub(crate) fn stamp(&self) -> Result<Stamp, AppError> {
+        self.snapshot(None)
+    }
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn install_bound(&self,kind:&'static str,plan:MutationPlan,bindings:Vec<TreeBinding>,engine:IoEngine,outcomes:Vec<SafeOutcome>,blocked:bool,stamp:Stamp,context_override:Option<crate::binding::ContextOverride>,auxiliary:Vec<crate::binding::FileBinding>)->Result<(String,u64),AppError>{
+    pub(crate) fn install_bound(
+        &self,
+        kind: &'static str,
+        plan: MutationPlan,
+        bindings: Vec<TreeBinding>,
+        engine: IoEngine,
+        outcomes: Vec<SafeOutcome>,
+        blocked: bool,
+        stamp: Stamp,
+        context_override: Option<crate::binding::ContextOverride>,
+        auxiliary: Vec<crate::binding::FileBinding>,
+    ) -> Result<(String, u64), AppError> {
         self.state.borrow_mut().preview = None;
         let mut bytes = stamp.bytes();
-        for binding in &auxiliary {bytes=bytes.saturating_add(binding.data.as_ref().map_or(0,Vec::len));}
-        for (_,tree) in &plan.retained {bytes=bytes.saturating_add(tree_bytes(tree));}
+        for binding in &auxiliary {
+            bytes = bytes.saturating_add(binding.data.as_ref().map_or(0, Vec::len));
+        }
+        for (_, tree) in &plan.retained {
+            bytes = bytes.saturating_add(tree_bytes(tree));
+        }
         for b in &bindings {
-            let represented=plan.directories.iter().any(|c|c.before.as_ref()==Some(&b.tree)||c.after.as_ref()==Some(&b.tree)) || plan.retained.iter().any(|(_,t)|t==&b.tree);
-            if !represented {bytes=bytes.saturating_add(tree_bytes(&b.tree));}
+            let represented =
+                plan.directories.iter().any(|c| {
+                    c.before.as_ref() == Some(&b.tree) || c.after.as_ref() == Some(&b.tree)
+                }) || plan.retained.iter().any(|(_, t)| t == &b.tree);
+            if !represented {
+                bytes = bytes.saturating_add(tree_bytes(&b.tree));
+            }
         }
         for c in &plan.directories {
             bytes = bytes
@@ -137,7 +159,12 @@ impl App {
         }
         let id = skill_io::disk::operation_id();
         let created = self.clock.now();
-        if stamp!=self.snapshot(context_override.as_ref())? || auxiliary.iter().any(|b|!b.matches()) || bindings.iter().any(|b|!b.matches()){return Err(error("preview_changed"));}
+        if stamp != self.snapshot(context_override.as_ref())?
+            || auxiliary.iter().any(|b| !b.matches())
+            || bindings.iter().any(|b| !b.matches())
+        {
+            return Err(error("preview_changed"));
+        }
         self.state.borrow_mut().preview = Some(Pending {
             id: id.clone(),
             context_override,
@@ -170,10 +197,13 @@ impl App {
         if p.blocked {
             return Err(error("preview_blocked"));
         }
-        if p.stamp != self.snapshot(p.context_override.as_ref())? || p.auxiliary.iter().any(|b|!b.matches()) || p.bindings.iter().any(|b| !b.matches()) {
+        if p.stamp != self.snapshot(p.context_override.as_ref())?
+            || p.auxiliary.iter().any(|b| !b.matches())
+            || p.bindings.iter().any(|b| !b.matches())
+        {
             return Err(error("preview_changed"));
         }
-        if p.plan.directories.is_empty() && p.plan.files.is_empty() {
+        if p.plan.directories.is_empty() && p.plan.files.is_empty() && p.plan.recovery_lock.is_none() && !p.plan.metadata.contains_key("abandonPreparation") {
             return Ok(ReceiptDto {
                 operation_id: String::new(),
                 backup_location: String::new(),
@@ -199,7 +229,9 @@ impl App {
         let mut protected_roots = vec![self.context.env.home.join(".skill-hub/agents")];
         if let Some(library) = library {
             protected_roots.push(library.into());
-            protected_roots.push(skill_io::disk::resolved_path(&self.context.env.home.join(".skill-hub"))?);
+            protected_roots.push(skill_io::disk::resolved_path(
+                &self.context.env.home.join(".skill-hub"),
+            )?);
         }
         Ok(IoEngine {
             backup_root: skill_io::disk::resolved_path(&settings.backup_path)?,
@@ -235,7 +267,9 @@ impl App {
                             .insert(profile.id.clone(), variant.clone());
                         for r in crate::roots::resolve_profile_roots(profile, &local)?.roots {
                             roots.insert(skill_io::disk::resolved_path(&r.path)?);
-                            if roots.len()>16384{return Err(error("too_many_resolved_roots"));}
+                            if roots.len() > 16384 {
+                                return Err(error("too_many_resolved_roots"));
+                            }
                         }
                     }
                 }

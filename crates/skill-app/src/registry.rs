@@ -45,16 +45,26 @@ pub struct Approval {
     pub root_proofs: Option<Vec<RootProof>>,
 }
 
-#[derive(Clone,serde::Serialize,serde::Deserialize)]
-#[serde(rename_all="camelCase",deny_unknown_fields)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RootProof {
-    pub probe:bool,pub root_id:String,pub variant:String,pub scope:skill_core::Scope,pub project:Option<PathBuf>,
-    pub logical_path:PathBuf,pub actual_path:PathBuf,pub anchor:PathBuf,pub anchor_key:String,
+    pub probe: bool,
+    pub root_id: String,
+    pub variant: String,
+    pub scope: skill_core::Scope,
+    pub project: Option<PathBuf>,
+    pub logical_path: PathBuf,
+    pub actual_path: PathBuf,
+    pub anchor: PathBuf,
+    pub anchor_key: String,
 }
-pub(crate) fn proof_current(p:&RootProof)->bool{
-    p.logical_path.is_absolute() && p.actual_path.is_absolute() && p.anchor.is_absolute()
-        && skill_io::disk::resolved_path(&p.logical_path).is_ok_and(|actual|actual==p.actual_path)
-        && skill_io::paths::physical_key(&p.anchor).is_ok_and(|key|key==p.anchor_key)
+pub(crate) fn proof_current(p: &RootProof) -> bool {
+    p.logical_path.is_absolute()
+        && p.actual_path.is_absolute()
+        && p.anchor.is_absolute()
+        && skill_io::disk::resolved_path(&p.logical_path)
+            .is_ok_and(|actual| actual == p.actual_path)
+        && skill_io::paths::physical_key(&p.anchor).is_ok_and(|key| key == p.anchor_key)
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -155,7 +165,13 @@ pub fn approval_matches(approval: &Approval, entry: &ProfileEntry, env: &HostEnv
         && approval.home == env.home
         && approval.appdata == env.appdata
         && approval.xdg_config == env.xdg_config
-        && approval.root_proofs.as_ref().is_none_or(|proofs|proofs.len()<=1024 && proofs.iter().filter(|p|p.scope==skill_core::Scope::User).all(proof_current))
+        && approval.root_proofs.as_ref().is_none_or(|proofs| {
+            proofs.len() <= 1024
+                && proofs
+                    .iter()
+                    .filter(|p| p.scope == skill_core::Scope::User)
+                    .all(proof_current)
+        })
         && approval.overrides.iter().all(|o| {
             o.path.is_absolute()
                 && (o.scope != skill_core::Scope::Project
@@ -181,7 +197,10 @@ pub fn load_registry(source: &RegistrySource, env: &HostEnv) -> Result<RegistryS
             code: "invalid_home",
         });
     }
-    let mut result = RegistrySnapshot { builtin_documents:source.builtins.clone(), ..Default::default() };
+    let mut result = RegistrySnapshot {
+        builtin_documents: source.builtins.clone(),
+        ..Default::default()
+    };
     if let Some(path) = &source.approvals_path {
         match skill_io::snapshot::read_bounded_file(path, 64 * 1024 * 1024) {
             Ok(bytes) => match serde_json::from_slice::<Vec<Approval>>(&bytes) {
@@ -292,10 +311,15 @@ pub fn load_registry(source: &RegistrySource, env: &HostEnv) -> Result<RegistryS
                 .filter(|a| entry.profile.as_ref().is_some_and(|p| p.id == a.id))
                 .collect();
             if approvals.len() == 1 && approval_matches(approvals[0], &entry, env) {
-                entry.state = if !approvals[0].enabled { ProfileState::Disabled }
-                    else if builtin { ProfileState::Builtin } else { ProfileState::Enabled };
+                entry.state = if !approvals[0].enabled {
+                    ProfileState::Disabled
+                } else if builtin {
+                    ProfileState::Builtin
+                } else {
+                    ProfileState::Enabled
+                };
             } else if !approvals.is_empty() && builtin {
-                entry.state=ProfileState::Pending;
+                entry.state = ProfileState::Pending;
                 entry.issues.push("profile_reauthorization_required");
             }
         }
