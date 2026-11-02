@@ -33,14 +33,7 @@ pub fn tree(body: &str) -> PackageTree {
     }
 }
 pub fn fixture() -> (IoEngine, PathBuf) {
-    let root = std::env::temp_dir().join(format!(
-        "skill-tx-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    ));
+    let root=std::env::temp_dir().join(format!("skill-tx-{}",skill_io::disk::operation_id()));
     fs::create_dir_all(&root).unwrap();
     let root = fs::canonicalize(root).unwrap();
     fs::create_dir_all(root.join("hub")).unwrap();

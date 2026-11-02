@@ -12,6 +12,7 @@ use std::{
     collections::BTreeSet,
     path::{Path, PathBuf},
 };
+type ApprovalData=(Vec<Approval>,Option<Vec<u8>>,PathBuf);
 pub(crate) struct ProfileBaseline {
     pub id: AgentId,
     pub path: Option<PathBuf>,
@@ -88,7 +89,7 @@ impl App {
         state.profile_tokens.insert(revision.clone(), baseline);
         Ok(revision)
     }
-    fn approval_data(&self) -> Result<(Vec<Approval>, Option<Vec<u8>>, PathBuf), AppError> {
+    fn approval_data(&self) -> Result<ApprovalData, AppError> {
         let path = self
             .source
             .approvals_path
@@ -187,6 +188,8 @@ impl App {
         let stamp = self.stamp()?;
         let mut seen = BTreeSet::new();
         let (settings, backups, _) = self.settings_data()?;
+        let (authority,_)=self.authority()?;
+        let private_roots=authority.libraries.into_iter().chain(authority.backups).chain(backups.iter().cloned()).chain([settings.library_path.clone()]).map(|p|skill_io::disk::resolved_path(&p)).collect::<Result<Vec<_>,_>>()?;
         for o in &req.local_root_overrides {
             if o.platform != self.context.env.platform
                 || !seen.insert((o.root_id.clone(), o.scope))
@@ -202,9 +205,7 @@ impl App {
             if overlap(
                 &actual,
                 &skill_io::disk::resolved_path(&settings.library_path)?,
-            ) || backups
-                .iter()
-                .any(|b| skill_io::disk::resolved_path(b).is_ok_and(|b| overlap(&actual, &b)))
+            ) || private_roots.iter().any(|b|overlap(&actual,b))
             {
                 return Err(error("protected_root"));
             }
@@ -263,9 +264,7 @@ impl App {
                     if overlap(
                         &actual,
                         &skill_io::disk::resolved_path(&settings.library_path)?,
-                    ) || backups.iter().any(|b| {
-                        skill_io::disk::resolved_path(b).is_ok_and(|b| overlap(&actual, &b))
-                    }) {
+                    ) || private_roots.iter().any(|b|overlap(&actual,b)) {
                         return Err(error("protected_root"));
                     }
                     resolved_roots.push(skill_core::compatibility::safe_text(

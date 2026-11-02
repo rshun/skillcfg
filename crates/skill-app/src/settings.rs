@@ -19,6 +19,7 @@ pub(crate) struct Authority {
     pub libraries: Vec<PathBuf>,
     pub backups: Vec<PathBuf>,
 }
+type SettingsData=(GuiSettings,Vec<PathBuf>,Option<Vec<u8>>);
 impl App {
     pub(crate) fn settings_path(&self) -> PathBuf {
         self.context.env.home.join(".skill-hub/settings.json")
@@ -28,7 +29,7 @@ impl App {
     }
     pub(crate) fn settings_data(
         &self,
-    ) -> Result<(GuiSettings, Vec<PathBuf>, Option<Vec<u8>>), AppError> {
+    ) -> Result<SettingsData, AppError> {
         let raw = optional_file(&self.settings_path())?;
         if let Some(bytes) = &raw {
             let doc: SettingsDocument =

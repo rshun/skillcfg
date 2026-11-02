@@ -433,7 +433,7 @@ impl IoEngine {
                 outcomes.push(ItemReceipt {
                     path: item.path,
                     outcome: Outcome::Blocked,
-                    reason: Some("directory_commit_failed".into()),
+                    reason: Some("prior_commit_failed".into()),
                 });
                 continue;
             }
@@ -457,9 +457,7 @@ impl IoEngine {
                         "recovery_required"
                     }
                     .into();
-                    if item.directory {
-                        directory_failed = true;
-                    }
+                    directory_failed = true;
                     outcomes.push(ItemReceipt {
                         path: item.path,
                         outcome,
@@ -654,10 +652,11 @@ impl IoEngine {
             .collect())
     }
     pub fn list_recoveries(&self) -> Result<Vec<RecoveryRecord>, IoError> {
+        let stale=crate::lock::stale_owner(&lock_path(self)?).ok().flatten();
         Ok(self
             .journals()?
             .into_iter()
-            .filter(|(_, j)| !matches!(j.state.as_str(), "verified" | "resolved" | "aborted"))
+            .filter(|(_, j)| stale.as_ref()==Some(&j.id) || !matches!(j.state.as_str(), "verified" | "resolved" | "aborted"))
             .map(|(location, j)| RecoveryRecord {
                 operation_id: j.id,
                 kind: j.kind,
