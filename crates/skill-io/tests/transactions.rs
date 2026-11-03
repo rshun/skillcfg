@@ -135,3 +135,18 @@ fn failed_metadata_commit_blocks_later_commit_pointer() {
         .any(|i| i.outcome == Outcome::Blocked));
     assert!(target.exists());
 }
+
+#[cfg(unix)]
+#[test]
+fn unwritable_backup_directory_means_zero_target_mutations() {
+    use std::os::unix::fs::PermissionsExt;
+    let (mut engine, target) = fixture();
+    let readonly = engine.backup_root.parent().unwrap().join("readonly");
+    fs::create_dir(&readonly).unwrap();
+    fs::set_permissions(&readonly, fs::Permissions::from_mode(0o500)).unwrap();
+    engine.backup_root = readonly.join("backups");
+    assert!(engine
+        .prepare(&plan(&target, Some(tree("old")), Some(tree("new"))))
+        .is_err());
+    assert_eq!(fs::read(target.join("SKILL.md")).unwrap(), document("old"));
+}

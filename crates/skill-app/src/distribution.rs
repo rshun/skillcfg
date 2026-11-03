@@ -276,8 +276,16 @@ impl App {
         over.extra_paths = targets.iter().map(|t| t.path.clone()).collect();
         over.extra_paths.push(req.library_path.clone());
         let bound_stamp = self.snapshot(Some(&over))?;
-        let mut target_bindings=Vec::new();
-        if !blocked{for t in &targets{let b=crate::preview::TargetBinding::capture(&t.path,t.tree.clone())?;if b.key!=t.key.0{return Err(error("preview_changed"));}target_bindings.push(b);}}
+        let mut target_bindings = Vec::new();
+        if !blocked {
+            for t in &targets {
+                let b = crate::preview::TargetBinding::capture(&t.path, t.tree.clone())?;
+                if b.key != t.key.0 {
+                    return Err(error("preview_changed"));
+                }
+                target_bindings.push(b);
+            }
+        }
         let (preview_id, expires_at) = self.install_bound(
             "distribution",
             plan,

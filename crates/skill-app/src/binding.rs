@@ -199,7 +199,7 @@ impl App {
                         if probe.base == skill_core::profile::Base::Project {
                             local.scope = skill_core::Scope::Project;
                         }
-                        if !crate::roots::probe_authorized(p,probe,&local) {
+                        if !crate::roots::probe_authorized(p, probe, &local) {
                             unauthorized_probes.insert(path.clone());
                         }
                         probe_paths.insert(path);

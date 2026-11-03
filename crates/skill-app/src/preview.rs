@@ -23,7 +23,7 @@ pub(crate) struct EditBaseline {
     pub bindings: Vec<TreeBinding>,
 }
 pub(crate) struct Pending {
-    pub targets:Vec<TargetBinding>,
+    pub targets: Vec<TargetBinding>,
     pub context_override: Option<crate::binding::ContextOverride>,
     pub auxiliary: Vec<crate::binding::FileBinding>,
     pub id: String,
@@ -48,10 +48,32 @@ pub(crate) struct Stamp {
     pub context: String,
     pub probes: Vec<ProbeBinding>,
 }
-pub(crate) struct TargetBinding {pub path:PathBuf,pub actual:PathBuf,pub key:String,pub tree:Option<PackageTree>}
-impl TargetBinding{
- pub fn capture(path:&Path,tree:Option<PackageTree>)->Result<Self,AppError>{let actual=skill_io::disk::resolved_path(path)?;let key=skill_io::paths::physical_key(path)?;let binding=Self{path:path.into(),actual,key,tree};if !binding.matches(){return Err(error("preview_changed"));}Ok(binding)}
- pub fn matches(&self)->bool{skill_io::disk::resolved_path(&self.path).is_ok_and(|p|p==self.actual) && skill_io::paths::physical_key(&self.path).is_ok_and(|key|key==self.key) && skill_io::disk::optional_tree(&self.path).is_ok_and(|tree|tree==self.tree)}
+pub(crate) struct TargetBinding {
+    pub path: PathBuf,
+    pub actual: PathBuf,
+    pub key: String,
+    pub tree: Option<PackageTree>,
+}
+impl TargetBinding {
+    pub fn capture(path: &Path, tree: Option<PackageTree>) -> Result<Self, AppError> {
+        let actual = skill_io::disk::resolved_path(path)?;
+        let key = skill_io::paths::physical_key(path)?;
+        let binding = Self {
+            path: path.into(),
+            actual,
+            key,
+            tree,
+        };
+        if !binding.matches() {
+            return Err(error("preview_changed"));
+        }
+        Ok(binding)
+    }
+    pub fn matches(&self) -> bool {
+        skill_io::disk::resolved_path(&self.path).is_ok_and(|p| p == self.actual)
+            && skill_io::paths::physical_key(&self.path).is_ok_and(|key| key == self.key)
+            && skill_io::disk::optional_tree(&self.path).is_ok_and(|tree| tree == self.tree)
+    }
 }
 pub(crate) struct TreeBinding {
     pub path: PathBuf,
@@ -134,11 +156,13 @@ impl App {
         stamp: Stamp,
         context_override: Option<crate::binding::ContextOverride>,
         auxiliary: Vec<crate::binding::FileBinding>,
-        targets:Vec<TargetBinding>,
+        targets: Vec<TargetBinding>,
     ) -> Result<(String, u64), AppError> {
         self.state.borrow_mut().preview = None;
         let mut bytes = stamp.bytes();
-        for t in &targets{bytes=bytes.saturating_add(t.tree.as_ref().map_or(0,tree_bytes));}
+        for t in &targets {
+            bytes = bytes.saturating_add(t.tree.as_ref().map_or(0, tree_bytes));
+        }
         for binding in &auxiliary {
             bytes = bytes.saturating_add(binding.data.as_ref().map_or(0, Vec::len));
         }
@@ -245,7 +269,7 @@ impl App {
         let scan_roots = self.known_roots(&ctx)?;
         let mut protected_roots = vec![self.context.env.home.join(".skill-hub/agents")];
         if let Some(library) = library {
-            let (authority,_)=self.authority()?;
+            let (authority, _) = self.authority()?;
             protected_roots.extend(authority.libraries.into_iter().chain(authority.backups));
             protected_roots.push(library.into());
             protected_roots.push(skill_io::disk::resolved_path(

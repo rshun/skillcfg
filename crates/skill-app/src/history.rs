@@ -217,12 +217,37 @@ impl App {
         // The authority index is monotonic: restoring an older operation must not
         // make later approved library/backup locations disappear from history.
         plan.files.retain(|f| f.path != self.authority_path());
-        let authority=self.history_authority()?;
-        if plan.metadata.get("restoredKind").is_some_and(|k|k=="distribution"){
-          for c in &plan.directories {for protected in authority.libraries.iter().chain(&authority.backups){if crate::settings::overlap(&c.path,&skill_io::disk::resolved_path(protected)?){return Err(error("protected_target"));}}}
+        let authority = self.history_authority()?;
+        if plan
+            .metadata
+            .get("restoredKind")
+            .is_some_and(|k| k == "distribution")
+        {
+            for c in &plan.directories {
+                for protected in authority.libraries.iter().chain(&authority.backups) {
+                    if crate::settings::overlap(&c.path, &skill_io::disk::resolved_path(protected)?)
+                    {
+                        return Err(error("protected_target"));
+                    }
+                }
+            }
         }
-        if plan.metadata.get("restoredKind").is_some_and(|k|k=="import"){
-          for file in &mut plan.files {if file.after.is_none() && file.path.file_name().is_some_and(|n|n=="catalog.json") && authority.libraries.iter().any(|p|skill_io::disk::resolved_path(p).is_ok_and(|p|file.path.parent()==Some(p.as_path()))){file.after=Some(br#"{"version":1,"records":[]}"#.to_vec());}}
+        if plan
+            .metadata
+            .get("restoredKind")
+            .is_some_and(|k| k == "import")
+        {
+            for file in &mut plan.files {
+                if file.after.is_none()
+                    && file.path.file_name().is_some_and(|n| n == "catalog.json")
+                    && authority.libraries.iter().any(|p| {
+                        skill_io::disk::resolved_path(p)
+                            .is_ok_and(|p| file.path.parent() == Some(p.as_path()))
+                    })
+                {
+                    file.after = Some(br#"{"version":1,"records":[]}"#.to_vec());
+                }
+            }
         }
         let mut warnings =
             vec!["恢复前会完整备份当前内容；原先不存在的目录通过归档移出加载路径。".into()];
@@ -276,9 +301,20 @@ impl App {
             skill_core::compatibility::safe_text(&engine.backup_root.to_string_lossy());
         plan.metadata
             .insert("createdAt".into(), self.clock.now().to_string());
-        let mut target_bindings=Vec::new();
-        for change in &plan.directories {target_bindings.push(crate::preview::TargetBinding::capture(&change.path,change.before.clone())?);}
-        for file in &plan.files{let binding=FileBinding::read(file.path.clone())?;if binding.data!=file.before{return Err(error("preview_changed"));}auxiliary.push(binding);}
+        let mut target_bindings = Vec::new();
+        for change in &plan.directories {
+            target_bindings.push(crate::preview::TargetBinding::capture(
+                &change.path,
+                change.before.clone(),
+            )?);
+        }
+        for file in &plan.files {
+            let binding = FileBinding::read(file.path.clone())?;
+            if binding.data != file.before {
+                return Err(error("preview_changed"));
+            }
+            auxiliary.push(binding);
+        }
         let (preview_id, expires_at) = self.install_bound(
             "restore",
             plan,
