@@ -8,7 +8,7 @@
 
 | 问题 | 回归用例 | 验证 |
 |---|---|---|
-| 跨卷中央备份导致锁释放和恢复 rename 失败 | cross_filesystem_backup_releases_lock_and_recovers_real_crash | RED→GREEN 已确认（Linux） |
+| 跨卷中央备份导致锁释放和恢复 rename 失败 | cross_filesystem_backup_releases_lock_and_recovers_real_crash | RED→GREEN，最终矩阵通过 |
 | 跳过/不变目标树与恢复目标物理身份未绑定 | changed_skipped_or_unchanged_target_invalidates_other_writes；same_bytes_new_target_identity_invalidates_restore | 同上 |
 | 内置根链接可覆盖外置历史库或旧备份 | builtin_alias_cannot_overwrite_historical_external_library | 同上 |
 | 恢复首次导入后库无法再次加载 | restoring_first_import_keeps_library_usable | 同上 |
@@ -25,4 +25,4 @@ GUI 和桌面 IPC 属于 Tasks 8–11；真实 Agent 加载、最终桌面安装
 
 进度文档按最终证据更新。审阅本身不证明 CI 通过；最终 SHA 对应的完整 GitHub 工作流必须验收。锁 inode 在原卷私有目录归档，中央备份保留持久化元数据副本，以支持跨卷。首次导入恢复保留有效的空 catalog 和所有未引用现场，避免删除，也允许再次导入。
 
-修复提交 f2eaaf6 / run 41634382261：Linux 107 项通过，包括全部六类回归和跨文件系统真实崩溃。其余平台与最终格式归档提交仍需核对完整 CI。
+修复 f2eaaf6 的全部六类回归通过；最终代码验收 c445bcb / [run 41635052515](https://github.com/rshun/skillcfg/actions/runs/41635052515)：6 个必需作业成功，Linux 108、两种 macOS 各 107、Windows 102 项测试，Clippy、格式、锁文件及四个 CLI 构建通过。跨文件系统真实设备测试只在 Linux /tmp 与 /dev/shm 运行。归档提交继续同一工作流，不将旧 SHA 的结果冒充新 SHA。

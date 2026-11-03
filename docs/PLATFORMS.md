@@ -18,3 +18,5 @@ runner 名称和架构核对自 [GitHub 官方说明](https://docs.github.com/en
 同一矩阵运行完整 workspace 测试、平台 Clippy 与 CLI release 构建，上传 skill-hub-ubuntu-24.04-X64、skill-hub-windows-2022-X64、skill-hub-macos-15-ARM64、skill-hub-macos-15-intel-X64。制品保留 14 天；它们是分支验证产物，不等于正式发布或桌面安装包。
 
 Unix 执行位用例只在 Linux/macOS 声明通过；Windows 使用原生共享句柄制造 rename 失败，并使用 junction 验证链接防护。真实崩溃用例在独立 fixture 子进程调用 exit，验证未执行 Drop 时的残留锁；不用真实 Agent 目录制造故障。
+
+第二阶段代码验收 c445bcb / run 41635052515：6 个必需作业成功，Linux 108、macOS arm64/Intel 各 107、Windows 102 项；四个 CLI release 制品已上传。跨设备测试以 Linux 的设备 ID 不同为前提实测，未声称在 macOS/Windows 分别配置第二块卷实测。
