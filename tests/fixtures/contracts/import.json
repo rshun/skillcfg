@@ -1,0 +1,12 @@
+{
+  "scanId": "preview-fixture",
+  "items": [
+    {
+      "itemId": "source-fixture",
+      "name": "review",
+      "sourcePath": "SOURCE_PATH",
+      "actualPath": "SOURCE_PATH",
+      "issues": []
+    }
+  ]
+}

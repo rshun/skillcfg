@@ -1,0 +1,17 @@
+[package]
+name = "skill-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "skill-hub"
+path = "src/main.rs"
+
+[dependencies]
+skill-app = { path = "../skill-app" }
+skill-core = { path = "../skill-core" }
+skill-io = { path = "../skill-io" }
+serde_json.workspace = true
+serde.workspace = true

@@ -1,0 +1,11 @@
+{
+  "operationId": "op-fixture",
+  "backupLocation": "BACKUP_PATH",
+  "outcomes": [
+    {
+      "path": "TARGET_PATH",
+      "outcome": "written",
+      "reason": null
+    }
+  ]
+}

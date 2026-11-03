@@ -1,0 +1,13 @@
+{
+  "previewId": "preview-fixture",
+  "profileId": "custom.demo",
+  "resolvedRoots": [
+    "TARGET_PATH"
+  ],
+  "probePaths": [],
+  "variants": [
+    "default"
+  ],
+  "blocked": false,
+  "warnings": []
+}
