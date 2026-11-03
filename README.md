@@ -27,6 +27,6 @@
 
 ## 第二阶段验收
 
-代码验收提交 c445bcb，[GitHub run 41635052515](https://github.com/rshun/skillcfg/actions/runs/41635052515) 的 6 个必需作业全部通过。Linux 108、macOS 两个架构各 107、Windows 102 项测试；平台专属用例按实际系统运行。CLI 制品可从工作流 Artifacts 获取，保留 14 天。归档提交仍由同一工作流检查；[开发分支最新 CI](https://github.com/rshun/skillcfg/actions/workflows/ci.yml?query=branch%3Adev%2Fskill-hub) 应与当前提交匹配。
+代码验收提交 9df300c，[GitHub run 41637391199](https://github.com/rshun/skillcfg/actions/runs/41637391199) 的 6 个必需作业全部通过。Linux 109、macOS 两个架构各 108、Windows 103 项测试；平台专属用例按实际系统运行。CLI 制品可从工作流 Artifacts 获取，保留 14 天。归档提交仍由同一工作流检查；[开发分支最新 CI](https://github.com/rshun/skillcfg/actions/workflows/ci.yml?query=branch%3Adev%2Fskill-hub) 应与当前提交匹配。
 
 [第二阶段审阅与修复记录](docs/reviews/stage-two-review.md) 包含六类回归。桌面界面、安装包和真实 Agent 加载验收仍属于后续阶段；当前 CLI 不代表 Agent 已加载 Skill。
