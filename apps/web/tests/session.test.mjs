@@ -39,3 +39,13 @@ test('restore uses an independent one-time preview and only its ID crosses commi
   const { session, calls } = fixture(); await session.prepare('distribution'); await session.prepare('restore', { operationId: 'old' }); await session.confirm();
   assert.deepEqual(calls.find(([c]) => c === 'commit_restore'), ['commit_restore', { previewId: 'p' }]); assert.equal(calls.some(([c]) => c === 'commit_distribution'), false);
 });
+test('registry invalidation clears pairs while preserving a completed receipt', async () => {
+  const receipt={operationId:'op',backupLocation:'/backups',outcomes:[{path:'/one',outcome:'written',reason:null}]};
+  const {session}=fixture(async c=>c.startsWith('preview_')?preview():receipt);
+  session.select(cellKey('one','codex'),true);await session.prepare('distribution');await session.confirm();await session.clear();
+  assert.deepEqual(session.state.receipt,receipt);assert.deepEqual(session.state.selection,[]);
+});
+test('rejected native context switch cannot leave the UI claiming a different scope', async () => {
+  const {session}=fixture(async c=>{if(c==='set_context')throw {code:'invalid_project'};return null;});
+  assert.equal(await session.context({scope:'project',projectRoot:'/missing'}),false);assert.equal(session.state.scope,'user');assert.equal(session.state.projectRoot,null);
+});

@@ -256,8 +256,10 @@ impl App {
         Ok(receipt)
     }
     pub fn cancel_preview(&self, id: &str) {
-        let mut state=self.state.borrow_mut();
-        if state.preview.as_ref().is_some_and(|p|p.id==id){state.preview=None;}
+        let mut state = self.state.borrow_mut();
+        if state.preview.as_ref().is_some_and(|p| p.id == id) {
+            state.preview = None;
+        }
     }
     pub(crate) fn engine(
         &self,

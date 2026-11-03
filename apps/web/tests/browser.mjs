@@ -48,7 +48,7 @@ export async function browser(t) {
     await call('Page.navigate', { url: 'http://127.0.0.1:4173' });
     await until(() => evaluate('document.querySelector("#root")?.textContent?.includes("Skill Hub")'), 'React ready');
     return { call, evaluate, click: async selector => {
-      const found = await evaluate(`!!document.querySelector(${JSON.stringify(selector)})`); if (!found) throw new Error(`Missing control: ${selector}`);
+      await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(selector)})`),`control: ${selector}`);
       await evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
     }, fill: (selector, value) => evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if (!el) throw new Error('Missing input'); Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)}); el.dispatchEvent(new Event('input',{bubbles:true})); })()`),
     text: () => evaluate('document.body.innerText'), ready: () => until(() => evaluate('!!document.querySelector("[data-ready=true]")'), 'workbench loaded') };

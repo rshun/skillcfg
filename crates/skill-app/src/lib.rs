@@ -13,10 +13,10 @@ pub mod roots;
 pub mod service;
 mod settings;
 mod workbench;
-pub use workbench::TargetStatus;
 pub use distribution::{DistributionRecord, ProfileAtWrite};
 pub use history::HistoryItem;
 pub use service::*;
+pub use workbench::TargetStatus;
 
 pub use env::HostEnv;
 pub use registry::{
