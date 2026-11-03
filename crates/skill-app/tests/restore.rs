@@ -122,3 +122,55 @@ fn restoring_first_import_keeps_library_usable() {
     import(&app, &source, &library);
     assert_eq!(app.load_library(&library).unwrap().records.len(), 1);
 }
+
+#[test]
+fn abandoning_first_import_preparation_keeps_library_usable() {
+    let (app, source, library, target) = ready();
+    let tree = skill_io::read_package_snapshot(&source, &skill_io::ScanLimits::default())
+        .unwrap()
+        .tree;
+    let backup = app.context.env.home.join(".skill-hub/backups");
+    let engine = skill_io::IoEngine {
+        backup_root: backup.clone(),
+        audit_path: app.context.env.home.join(".skill-hub/audit/events.jsonl"),
+        write_roots: vec![library.join("packages")],
+        write_files: vec![library.join("catalog.json")],
+        write_file_roots: vec![],
+        scan_roots: vec![target.parent().unwrap().to_owned()],
+        protected_roots: vec![],
+        observer: std::sync::Arc::new(skill_io::Quiet),
+    };
+    let plan = skill_io::MutationPlan {
+        directories: vec![skill_io::DirectoryChange {
+            path: library.join("packages/fixture/revisions/fixture"),
+            before: None,
+            after: Some(tree),
+        }],
+        files: vec![skill_io::FileChange {
+            path: library.join("catalog.json"),
+            before: None,
+            after: Some(br#"{"version":1,"records":[]}"#.to_vec()),
+        }],
+        kind: "import".into(),
+        ..Default::default()
+    };
+    let prepared = engine.prepare(&plan).unwrap();
+    let operation = engine.list_recoveries().unwrap()[0].operation_id.clone();
+    drop(prepared);
+    // Reproduce a process exit after staging finished but before the prepared
+    // manifest was published. No target commit has occurred.
+    let path = backup.join(&operation).join("manifest.json");
+    let mut journal: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    journal["state"] = serde_json::json!("preparing");
+    fs::write(path, serde_json::to_vec(&journal).unwrap()).unwrap();
+    let staging = library.join(".skill-hub-transactions");
+    assert!(staging.exists());
+    assert!(!library.join("catalog.json").exists());
+    let p = app.preview_restore(&operation).unwrap();
+    app.commit_restore(&p.preview_id).unwrap();
+    assert!(app.load_library(&library).unwrap().records.is_empty());
+    assert!(staging.exists());
+    assert!(!target.exists());
+    import(&app, &source, &library);
+    assert_eq!(app.load_library(&library).unwrap().records.len(), 1);
+}
