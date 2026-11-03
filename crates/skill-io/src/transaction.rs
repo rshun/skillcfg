@@ -695,6 +695,23 @@ impl IoEngine {
         if matches!(journal.state.as_str(), "preparing" | "aborted") {
             plan.metadata
                 .insert("abandonPreparation".into(), "true".into());
+            // Preparation never committed a target. Keep current scalar values
+            // so callers can repair missing metadata without replaying an
+            // incomplete backup or overwriting later edits.
+            let mut restored_bytes = 0usize;
+            for item in journal.items.iter().filter(|item| !item.directory) {
+                let current = optional_file(&item.path)?;
+                restored_bytes = restored_bytes
+                    .saturating_add(current.as_ref().map_or(0, Vec::len).saturating_mul(2));
+                if restored_bytes > 64 * 1024 * 1024 {
+                    return Err(err("preview_too_large"));
+                }
+                plan.files.push(FileChange {
+                    path: item.path.clone(),
+                    before: current.clone(),
+                    after: current,
+                });
+            }
             return Ok(plan);
         }
         let mut di = 0;
