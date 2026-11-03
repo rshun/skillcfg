@@ -1,0 +1,51 @@
+name: Desktop and UI
+on:
+  push:
+    branches: ['dev/**']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web-lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Generate missing frontend lock in GitHub only
+        working-directory: apps/web
+        run: |
+          if [ ! -f package-lock.json ]; then npm install --package-lock-only --ignore-scripts; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: web-lock
+          path: apps/web/package-lock.json
+  web:
+    needs: web-lock
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: web-lock
+          path: apps/web
+      - run: npm --prefix apps/web ci
+      - run: npm --prefix apps/web test
+      - name: Build typed frontend
+        if: success() || failure()
+        run: npm --prefix apps/web run build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: success() || failure()
+        with:
+          name: web-dist
+          path: apps/web/dist
+          if-no-files-found: warn
