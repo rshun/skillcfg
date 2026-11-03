@@ -2,6 +2,8 @@
 
 本地 Skill 管理与跨 Agent 手动分发工具。内置 Codex、Claude Code、Antigravity 和 Grok Build，普通新增 Agent 通过 JSON 档案接入。
 
+首版为 v0.1.0 CLI，提供 Linux、Windows、macOS 两个架构的 ZIP 和 SHA-256；见 [发布说明](docs/releases/v0.1.0.md)。发布包由 GitHub Actions 在完整验证通过后生成。
+
 ## 当前状态
 
 第一阶段核心和只读发现已验收。第二阶段的完整包备份、库管理、手动预览/应用/恢复及 CLI 已通过独立审阅修复与四平台 GitHub 验收。桌面界面属于第三阶段。

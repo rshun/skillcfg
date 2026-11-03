@@ -101,3 +101,21 @@ jobs:
       - name: Check checked-in lockfile matches generated workspace graph
         if: success() || failure()
         run: git diff --exit-code -- Cargo.lock
+
+  release-packages:
+    needs: [tests, quality]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: skill-hub-*
+          path: downloaded
+      - name: Package and verify tested native binaries in GitHub
+        run: python3 scripts/package_release.py --input downloaded --output release-assets
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-packages
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
