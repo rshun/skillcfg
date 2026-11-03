@@ -73,6 +73,29 @@ jobs:
         with:
           name: desktop-lock
           path: apps/web/src-tauri/Cargo.lock
+  native-format:
+    needs: desktop-lock
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.90.0'
+          components: rustfmt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: desktop-lock
+          path: apps/web/src-tauri
+      - name: Format native source in GitHub only
+        run: |
+          cargo fmt --all --manifest-path apps/web/src-tauri/Cargo.toml
+          git diff --binary -- crates apps/web/src-tauri > native-formatting.patch
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-formatting-patch
+          path: native-formatting.patch
+      - name: Check native formatting
+        run: git diff --exit-code -- crates apps/web/src-tauri
   desktop:
     needs: [desktop-lock, web, web-lock]
     if: ${{ !cancelled() && needs.desktop-lock.result == 'success' }}

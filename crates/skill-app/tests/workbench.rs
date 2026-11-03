@@ -15,7 +15,8 @@ fn target_statuses_compare_full_bytes_without_consuming_ready_preview() {
 }
 #[test]
 fn profile_editor_token_binds_the_document_shown_to_user() {
-    let (app,_,_,_)=ready(); let id=AgentId::parse("codex").unwrap();
+    let (app,_,_,_)=ready(); let id=AgentId::parse("custom.editable").unwrap();
+    let saved=app.preview_agent_profile(ProfileChangeRequest{profile_json:bytes(&profile("custom.editable")),expected_revision:None,local_root_overrides:vec![],enable_after_save:true}).unwrap();app.commit_agent_profile(&saved.preview_id).unwrap();
     let (document,revision)=app.read_agent_profile_document(&id).unwrap();
     let mut p:serde_json::Value=serde_json::from_str(&document).unwrap(); p["displayName"]=serde_json::json!("Edited label");
     let preview=app.preview_agent_profile(ProfileChangeRequest{profile_json:serde_json::to_vec(&p).unwrap(),expected_revision:Some(revision),local_root_overrides:vec![],enable_after_save:true}).unwrap();
