@@ -683,6 +683,7 @@ impl IoEngine {
             recovery_lock,
             ..Default::default()
         };
+        plan.metadata.insert("restoredKind".into(),journal.kind.clone());
         plan.metadata.insert(
             "restoreBackupRoot".into(),
             resolved_path(&self.backup_root)?

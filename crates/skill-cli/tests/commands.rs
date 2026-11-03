@@ -74,7 +74,8 @@ fn same_binary_adds_fifth_agent_imports_applies_and_restores() {
             "--yes",
         ],
     );
-    let profiles=success(&p,&["agents","list"]);assert!(profiles.to_string().contains("custom.demo"));
+    let profiles = success(&p, &["agents", "list"]);
+    assert!(profiles.to_string().contains("custom.demo"));
     let source = p.join("source");
     fs::create_dir(&source).unwrap();
     fs::write(

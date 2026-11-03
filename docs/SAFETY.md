@@ -24,7 +24,7 @@
 
 普通写入只尝试 create_new，全程持有内核独占能力。Unix 使用非阻塞 flock；Windows 使用拒绝其他读写句柄、允许 rename 的共享模式。进程退出时内核释放句柄，文件仍保留，普通写入不会自动夺取残留锁。
 
-显式恢复预览确认锁不属于活跃进程，并绑定 operation ID、原始锁字节和物理身份。确认时重新取得排他能力并复核，先将旧锁 rename 为新备份中的 recovered.lock，随后创建新锁。正常释放 rename 为 released.lock。旧格式、无法证明归属或其他操作的锁均阻止恢复，不猜测。
+显式恢复预览确认锁不属于活跃进程，并绑定 operation ID、原始锁字节和物理身份。确认时重新取得排他能力并复核，先在中央备份持久化 recovered.lock 元数据副本，再将旧锁 inode rename 到锁所在卷的 .lock-records 私有目录，随后创建新锁。正常释放同样保留 released.lock 副本和原卷 inode，以支持跨卷中央备份。旧格式、无法证明归属或其他操作的锁均阻止恢复，不猜测。
 
 preparing 状态表示引擎尚未开始目标提交；不完整备份只能显式放弃准备，保留后来编辑，不用不完整快照回写。已初始化日志才发布到正式操作目录，.initializing-* 残留保留供查且不作为可恢复事务扫描。
 
@@ -39,3 +39,5 @@ preparing 状态表示引擎尚未开始目标提交；不完整备份只能显�
 - [Rust Windows OpenOptionsExt](https://doc.rust-lang.org/stable/std/os/windows/fs/trait.OpenOptionsExt.html) 与 [Microsoft CreateFileW](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew)：共享模式冲突与 FILE_SHARE_DELETE 的 rename 行为。
 
 这是本地协作进程间的保守保护，不承诺防御拥有同一用户权限的恶意进程对所有父目录进行瞬间置换。
+
+恢复首次导入后保留合法空 catalog，不删除未引用 revision 或 staging；库仍可继续导入。所有预览目标（包括跳过和不变项）都绑定完整树与物理身份，历史库和备份根在实际分发/恢复时再次检查。共享读取影响与快照使用相同的单个探针授权判断，未授权探针只返回 Unknown。

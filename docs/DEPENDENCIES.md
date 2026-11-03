@@ -1,10 +1,10 @@
-# 第一阶段依赖与执行边界
+# 第一、二阶段依赖与执行边界
 
 状态：用户已明确依赖、编译、测试和打包均在 GitHub 执行；按这一边界继续，不在本机安装。当前版本清单与本阶段 CI 一起提交，构建结果以 GitHub 为准。
 
 ## 直接依赖提案
 
-以下版本从参考项目 mcpconfig 的 Cargo.lock 核对，不顺带升级。版本写入 manifest 前需用户按全局规范确认。
+以下版本从参考项目 mcpconfig 的 Cargo.lock 核对，不顺带升级。用户已授权在 GitHub 临时 runner 中处理这组锁定依赖；本机不安装。第二阶段仅复用 serde/serde_json 给 IO/CLI，没有新增第三方包，CLI 参数解析使用标准库。
 
 | 包 | 精确版本 | 用途 |
 |---|---|---|
@@ -27,3 +27,5 @@ serde_yaml 为参考项目所用版本，已知不再积极维护。本阶段仅
 - CI 的外部 action 复用参考项目已使用的固定 commit：actions/checkout 与 dtolnay/rust-toolchain；上传/下载制品使用 GitHub 官方 action。确切引用会随 CI 文件一起审阅。
 
 阶段一面向 Linux/macOS/Windows 的核心与只读能力；桌面构建和安装包属于后续阶段，不将本阶段核心测试通过说成桌面已可用。
+
+第二阶段生成的 CLI 为纯 Rust 命令行程序，四个原生 runner 在测试和 Clippy 后构建 release 二进制并上传 Actions 制品。锁文件图由 GitHub 更新后取回；桌面/Node 依赖不包含在本阶段。

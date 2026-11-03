@@ -1,7 +1,9 @@
 //! Conservative display protection; it is not a credential-free certification.
 pub fn contains_sensitive_literal(text: &str) -> bool {
     text.split("://").skip(1).any(|part| {
-        part.split(|c:char|c.is_whitespace() || "/\\?#\"'<>".contains(c)).next().is_some_and(|authority|authority.contains('@'))
+        part.split(|c: char| c.is_whitespace() || "/\\?#\"'<>".contains(c))
+            .next()
+            .is_some_and(|authority| authority.contains('@'))
     }) || serde_json::from_str::<serde_json::Value>(text).is_ok_and(|value| json_sensitive(&value))
         || text
             .split(['\n', '{', '}', ',', ';'])

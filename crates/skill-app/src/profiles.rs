@@ -8,10 +8,7 @@ use skill_core::{
     profile::{parse_agent_profile, AgentProfile, Base},
     AgentId, Scope,
 };
-use std::{
-    collections::BTreeSet,
-    path::PathBuf,
-};
+use std::{collections::BTreeSet, path::PathBuf};
 type ApprovalData = (Vec<Approval>, Option<Vec<u8>>, PathBuf);
 pub(crate) struct ProfileBaseline {
     pub id: AgentId,
@@ -345,6 +342,7 @@ impl App {
             false,
             bound_stamp,
             Some(over),
+            vec![],
             vec![],
         )?;
         Ok(ProfilePreviewDto {

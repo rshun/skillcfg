@@ -1,5 +1,5 @@
 use crate::{
-    disk::{directories, err, sync_parent},
+    disk::{directories, err, sync_parent, write_new},
     IoError,
 };
 use std::{
@@ -26,6 +26,7 @@ pub(crate) struct Lock {
     released: PathBuf,
     key: String,
     file: Option<File>,
+    bytes:Vec<u8>,
 }
 fn open(path: &Path, create: bool) -> Result<File, IoError> {
     if !create
@@ -134,8 +135,7 @@ impl Lock {
             if destination.exists() {
                 return Err(err("recovery_lock_changed"));
             }
-            fs::rename(path, &destination).map_err(|_| err("lock_archive_failed"))?;
-            sync_parent(&destination)?;
+            archive(path,&destination,&evidence.bytes)?;
         }
         let mut file = open(path, true)?;
         let bytes = serde_json::to_vec(&Owner {
@@ -152,6 +152,7 @@ impl Lock {
             released: released.into(),
             key,
             file: Some(file),
+            bytes,
         })
     }
     pub fn valid(&self) -> Result<(), IoError> {
@@ -165,7 +166,7 @@ impl Lock {
         if self.released.exists() {
             return Err(err("lock_archive_failed"));
         }
-        fs::rename(&self.path, &self.released).map_err(|_| err("lock_archive_failed"))?;
+        archive(&self.path,&self.released,&self.bytes)?;
         self.file = None;
         sync_parent(&self.released)
     }
@@ -196,4 +197,15 @@ pub(crate) fn stale_owner(path: &Path) -> Result<Option<String>, IoError> {
         return Err(err("unknown_lock_owner"));
     }
     Ok(Some(owner.operation_id))
+}
+
+fn archive(path:&Path,copy:&Path,bytes:&[u8])->Result<(),IoError>{
+    // Preserve the lock inode on its own volume. The central backup receives a
+    // durable metadata copy, so a different backup filesystem needs no rename.
+    write_new(copy,bytes)?;sync_parent(copy)?;
+    let local=path.parent().ok_or(err("invalid_path"))?.join(".lock-records").join(crate::disk::operation_id());
+    directories(&local)?;
+    let archived=local.join(copy.file_name().ok_or(err("invalid_path"))?);
+    fs::rename(path,&archived).map_err(|_|err("lock_archive_failed"))?;
+    sync_parent(&archived)?;sync_parent(path)
 }

@@ -213,6 +213,7 @@ impl App {
             if let Some(i) = index {
                 catalog.records[i] = record;
             } else {
+                if catalog.records.len()>=1024{return Err(error("too_many_library_records"));}
                 catalog.records.push(record);
             }
         }
@@ -243,7 +244,7 @@ impl App {
             None,
         )?;
         let (preview_id, expires_at) = self.install_bound(
-            "import", plan, bindings, engine, outcomes, false, stamp, None, auxiliary,
+            "import", plan, bindings, engine, outcomes, false, stamp, None, auxiliary,vec![],
         )?;
         Ok(PreviewDto {
             backup_location: skill_core::compatibility::safe_text(

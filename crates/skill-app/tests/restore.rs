@@ -83,9 +83,42 @@ fn changed_backup_root_keeps_old_history_and_corrupt_settings_require_explicit_r
 }
 
 #[test]
-fn same_bytes_new_target_identity_invalidates_restore(){
- let(app,source,library,target)=ready();let id=import(&app,&source,&library);let p=app.preview_distribution(request(&id,&library)).unwrap();let receipt=app.commit_distribution(&p.preview_id).unwrap();let preview=app.preview_restore(&receipt.operation_id).unwrap();let bytes=fs::read(target.join("SKILL.md")).unwrap();fs::rename(&target,target.with_file_name("preserved")).unwrap();fs::create_dir(&target).unwrap();fs::write(target.join("SKILL.md"),&bytes).unwrap();assert!(app.commit_restore(&preview.preview_id).is_err());assert_eq!(fs::read(target.join("SKILL.md")).unwrap(),bytes);
+fn same_bytes_new_target_identity_invalidates_restore() {
+    let (app, source, library, target) = ready();
+    let id = import(&app, &source, &library);
+    let p = app.preview_distribution(request(&id, &library)).unwrap();
+    let receipt = app.commit_distribution(&p.preview_id).unwrap();
+    let preview = app.preview_restore(&receipt.operation_id).unwrap();
+    let bytes = fs::read(target.join("SKILL.md")).unwrap();
+    fs::rename(&target, target.with_file_name("preserved")).unwrap();
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("SKILL.md"), &bytes).unwrap();
+    assert!(app.commit_restore(&preview.preview_id).is_err());
+    assert_eq!(fs::read(target.join("SKILL.md")).unwrap(), bytes);
 }
 
 #[test]
-fn restoring_first_import_keeps_library_usable(){let(app,source,library,_)=ready();let scan=app.scan_import(ImportRequest{source:source.clone(),library_path:library.clone()}).unwrap();let p=app.preview_import(&scan.scan_id,&[ImportChoice{item_id:scan.items[0].item_id.clone(),action:ImportAction::New}]).unwrap();let imported=app.commit_import(&p.preview_id).unwrap();let p=app.preview_restore(&imported.operation_id).unwrap();app.commit_restore(&p.preview_id).unwrap();assert!(app.load_library(&library).unwrap().records.is_empty());import(&app,&source,&library);assert_eq!(app.load_library(&library).unwrap().records.len(),1);}
+fn restoring_first_import_keeps_library_usable() {
+    let (app, source, library, _) = ready();
+    let scan = app
+        .scan_import(ImportRequest {
+            source: source.clone(),
+            library_path: library.clone(),
+        })
+        .unwrap();
+    let p = app
+        .preview_import(
+            &scan.scan_id,
+            &[ImportChoice {
+                item_id: scan.items[0].item_id.clone(),
+                action: ImportAction::New,
+            }],
+        )
+        .unwrap();
+    let imported = app.commit_import(&p.preview_id).unwrap();
+    let p = app.preview_restore(&imported.operation_id).unwrap();
+    app.commit_restore(&p.preview_id).unwrap();
+    assert!(app.load_library(&library).unwrap().records.is_empty());
+    import(&app, &source, &library);
+    assert_eq!(app.load_library(&library).unwrap().records.len(), 1);
+}

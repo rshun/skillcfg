@@ -161,6 +161,7 @@ fn probe_state(profile: &AgentProfile, id: &str, ctx: &AppContext) -> ReadState 
     let Some(probe) = profile.probes.iter().find(|p| p.probe_id == id) else {
         return ReadState::Unknown;
     };
+    if !probe_authorized(profile,probe,ctx){return ReadState::Unknown;}
     let missing = || match &probe.on_missing {
         MissingValue::Bool(true) => ReadState::ConfigEnabled,
         MissingValue::Bool(false) => ReadState::ConfigDisabled,
@@ -280,4 +281,15 @@ pub fn reader_exposures(path: &Path, ctx: &AppContext) -> Result<Vec<ReaderExpos
         }
     }
     Ok(found.into_iter().collect())
+}
+
+pub(crate) fn probe_authorized(profile:&AgentProfile,probe:&skill_core::profile::BoolProbe,ctx:&AppContext)->bool{
+    if ctx.registry.builtin_documents.iter().any(|b|skill_core::profile::parse_agent_profile(b).is_ok_and(|p|p.id==profile.id)){return true;}
+    let Some(entry)=ctx.registry.entries.iter().find(|e|e.profile.as_ref().is_some_and(|p|p.id==profile.id))else{return false;};
+    let Some(approval)=ctx.registry.approvals.iter().find(|a|a.id==profile.id && crate::registry::approval_matches(a,entry,&ctx.env))else{return false;};
+    let Some(proofs)=&approval.root_proofs else{return true;};
+    let Some(base)=ctx.env.base(probe.base)else{return false;};
+    let scope=if probe.base==Base::Project{Scope::Project}else{Scope::User};
+    let project=if scope==Scope::Project{ctx.env.project_root.as_ref().and_then(|p|skill_io::disk::resolved_path(p).ok())}else{None};
+    proofs.iter().any(|p|p.probe && p.root_id==probe.probe_id && p.scope==scope && p.project==project && p.logical_path==base.join(&probe.relative) && crate::registry::proof_current(p))
 }
