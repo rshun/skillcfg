@@ -41,8 +41,18 @@ jobs:
       - run: npm --prefix apps/web ci
       - run: npm --prefix apps/web test
       - name: Build typed frontend
+        id: web-build
         if: success() || failure()
         run: npm --prefix apps/web run build
+      - name: Real Chrome workbench scenarios
+        if: ${{ !cancelled() && steps.web-build.outcome == 'success' }}
+        run: npm --prefix apps/web run test:gui
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: success() || failure()
+        with:
+          name: ui-review
+          path: apps/web/artifacts
+          if-no-files-found: warn
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: success() || failure()
         with:
