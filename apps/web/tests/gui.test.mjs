@@ -108,6 +108,11 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
     assert.equal(await p.evaluate('window.calls.filter(([c])=>c==="commit_restore").length'),1);await p.click('dialog button[aria-label="关闭"]');
     await p.call('Page.reload');await p.ready();assert.ok((await p.text()).includes('事务需要处理'));
   });
+  await t.test('agent inventory reloads when scope changes without changing page',async()=>{
+    const p=await page();await p.click('[data-page="agents"]');await p.click('[data-agent="codex"]');
+    await until(()=>p.evaluate('document.body.innerText.includes("/fixture/source-link")'),'user inventory');await p.click('[data-scope="project"]');
+    await until(()=>p.evaluate('document.body.innerText.includes("project-only-skill")'),'project inventory');
+  });
   await t.test('four page and task screenshots at desktop and narrow widths',async()=>{
     const p=await page();await mkdir('artifacts',{recursive:true});await p.evaluate('document.fonts.ready');
     for(const width of [1024,320]){
