@@ -8,7 +8,7 @@ let serial = 0;
 export async function mockCall<T>(command: string, request: Record<string, unknown>): Promise<T> {
   let value: unknown;
   if (command.startsWith('preview_') && command !== 'preview_agent_profile') {
-    const preview: Preview = { previewId: `demo-preview-${++serial}`, expiresAt: Date.now()/1000 + 600, blocked: false, backupLocation: '/demo/backups', warnings: ['此为演示预览，不读取或修改本机文件。'], groups: [{ targetKey: 'demo-target', path: '/demo/target/code-review', disposition: 'new', selectedAgents: ((request.selection as {agent:string}[] | undefined) || []).map(p => p.agent), possibleReaders: [], files: [{ path: 'SKILL.md', before: null, after: '---\nname: code-review\ndescription: Review changes.\n---\n', beforeBytes: 0, afterBytes: 60, binary: false, truncated: false }], reason: null }] };
+    const preview: Preview = { previewId: `demo-preview-${++serial}`, expiresAt: Date.now()/1000 + 600, blocked: false, backupLocation: '/demo/backups', warnings: ['此为演示预览，不读取或修改本机文件。'], groups: [{ targetKey: 'demo-target', path: '/demo/target/code-review', disposition: 'new', selectedAgents: ((request.selection as {agent:string}[] | undefined) || []).map(p => p.agent), possibleReaders: [], files: [{ change:'added',beforeKind:null,afterKind:'file',beforeExecutable:null,afterExecutable:false,path: 'SKILL.md', before: null, after: '---\nname: code-review\ndescription: Review changes.\n---\n', beforeBytes: 0, afterBytes: 60, binary: false, truncated: false }], reason: null }] };
     last = { kind: command.slice(8), preview }; value = preview;
   } else if (command.startsWith('commit_')) {
     if (command === 'commit_agent_profile') { value = { operationId: 'demo-profile', backupLocation: '/demo/backups', outcomes: [] }; }

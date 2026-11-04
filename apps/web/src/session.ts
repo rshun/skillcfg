@@ -19,7 +19,9 @@ export class SessionController {
   select(key: string, checked: boolean) {
     if (this.state.phase === 'confirming') return;
     selectionFromCells([key]); const cells = new Set(this.state.selection); if (checked) cells.add(key); else cells.delete(key);
+    const oldId=this.state.preview?.previewId;
     ++this.epoch; this.update({ selection: [...cells], preview: null, phase: 'idle', error: null });
+    if(oldId)void this.call('cancel_preview',{previewId:oldId}).catch(()=>{});
   }
   async clear() { if (this.state.phase === 'confirming') return; if (this.state.phase !== 'result') await this.cancel(); this.update({ selection: [] }); }
   async cancel() {
@@ -56,7 +58,7 @@ export class SessionController {
     this.update({ phase: 'planning', preview: null, receipt: null, error: null, kind });
     try {
       const preview = parsePreview(await this.call(`preview_${kind}`, args));
-      if (epoch !== this.epoch || generation !== this.state.generation) return;
+      if (epoch !== this.epoch || generation !== this.state.generation) { await this.call('cancel_preview',{previewId:preview.previewId}).catch(()=>{});return; }
       this.update({ preview, phase: preview.expiresAt <= this.now() ? 'expired' : 'ready' });
     } catch (error) { if (epoch === this.epoch && generation === this.state.generation) this.update({ phase: 'idle', error: errorCode(error) }); }
   }

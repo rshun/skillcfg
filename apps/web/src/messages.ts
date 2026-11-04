@@ -1,4 +1,6 @@
 const messages: Record<string,string> = {
+  edit_baseline_changed: '库中的版本已变化，草稿已保留。请复制草稿并重新打开，核对新版本后再保存。',
+  settings_changed: '当前设置已变化，输入已保留。请核对已保存设置后再编辑，不能直接覆盖新版本。',
   invalid_settings: '设置文件损坏。请在变更历史中预览恢复，修复前不会写入库或 Agent。',
   invalid_catalog: '库索引无法解析，请核对位置或从历史备份恢复。', missing_catalog: '此目录缺少有效库索引。保留现场，检查历史备份。',
   preview_expired: '预览已过期，请重新预览。', preview_consumed: '此预览已使用或取消，请重新预览。', invalid_preview: '预览与当前操作不匹配，请重新预览。',

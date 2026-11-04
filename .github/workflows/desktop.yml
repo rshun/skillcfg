@@ -144,9 +144,9 @@ jobs:
       - name: Native Clippy
         run: cargo clippy --manifest-path apps/web/src-tauri/Cargo.toml --all-targets --locked -- -D warnings
       - name: Verify embedded production frontend
-        run: cargo test --manifest-path apps/web/src-tauri/Cargo.toml --release --locked -p skill-desktop --test release_assets
+        run: cargo test --manifest-path apps/web/src-tauri/Cargo.toml --release --locked --features custom-protocol -p skill-desktop --test release_assets
       - name: Build desktop candidate in GitHub
-        run: cargo build --manifest-path apps/web/src-tauri/Cargo.toml --release --locked -p skill-desktop
+        run: cargo build --manifest-path apps/web/src-tauri/Cargo.toml --release --locked --features custom-protocol -p skill-desktop
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: desktop-candidate-${{ matrix.os }}-${{ runner.arch }}

@@ -84,11 +84,11 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
     assert.equal(await p.evaluate('document.querySelector("[data-action=preview-distribution]").disabled'),true);
   });
   await t.test('unsaved edits and settings require discard confirmation', async () => {
-    const p=await page('window.acceptDiscard=false');await p.click('[data-action="edit-skill"]');
-    await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','unsaved');await p.click('dialog button[aria-label="关闭"]');
-    assert.ok(await p.evaluate('!!document.querySelector("dialog[open]")'));await p.evaluate('window.acceptDiscard=true');await p.click('dialog button[aria-label="关闭"]');
-    await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/another-library');await p.evaluate('window.acceptDiscard=false');await p.click('[data-page="history"]');
-    assert.ok(await p.evaluate('!!document.querySelector("[data-action=save-settings]")'));await p.evaluate('window.acceptDiscard=true');await p.click('[data-page="library"]');
+    const p=await page();await p.click('[data-action="edit-skill"]');
+    await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','unsaved');await p.click('dialog button[aria-label="关闭"]');await p.click('[data-action="discard-cancel"]');
+    assert.equal(await p.evaluate('document.querySelector("textarea[name=document]").value'),'unsaved');await p.click('dialog button[aria-label="关闭"]');await p.click('[data-action="discard-confirm"]');await until(()=>p.evaluate('!document.querySelector("dialog[open]")'),'editor closed');
+    await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/another-library');await p.click('[data-page="history"]');await p.click('[data-action="discard-cancel"]');
+    assert.ok(await p.evaluate('!!document.querySelector("[data-action=save-settings]")'));await p.click('[data-page="library"]');await p.click('[data-action="discard-confirm"]');
   });
   await t.test('settings library switch clears pairs without automatic apply', async () => {
     const p=await page();await p.click('[data-target="codex"]');await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/another-library');await p.click('[data-action="save-settings"]');
