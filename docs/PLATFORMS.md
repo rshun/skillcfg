@@ -20,3 +20,11 @@ runner 名称和架构核对自 [GitHub 官方说明](https://docs.github.com/en
 Unix 执行位用例只在 Linux/macOS 声明通过；Windows 使用原生共享句柄制造 rename 失败，并使用 junction 验证链接防护。真实崩溃用例在独立 fixture 子进程调用 exit，验证未执行 Drop 时的残留锁；不用真实 Agent 目录制造故障。
 
 第二阶段代码验收 c445bcb / run 41635052515：6 个必需作业成功，Linux 108、macOS arm64/Intel 各 107、Windows 102 项；四个 CLI release 制品已上传。跨设备测试以 Linux 的设备 ID 不同为前提实测，未声称在 macOS/Windows 分别配置第二块卷实测。
+
+## 第三阶段桌面候选
+
+`desktop.yml` 独立原生工作区在以上四个 runner 原生运行桥接测试、cargo check、Clippy、release 构建；不是只交叉编译。原生编译包含 React/Vite 前端资源。`desktop-candidate-ubuntu-24.04-X64`、`desktop-candidate-windows-2022-X64`、`desktop-candidate-macos-15-ARM64`、`desktop-candidate-macos-15-intel-X64` 为可执行候选，完整安装包在第四阶段。
+
+Linux runner 安装 WebKitGTK 4.1 开发库和 AppIndicator 等，Windows 使用系统 WebView2，macOS 使用 WebKit。当前只声明 runner OS 构建基线；最低系统版本、GUI 启动、原生目录选择器人工交互、签名、公证、安装/升级及真实 Agent 加载尚未验收。跨平台桥接单元测试验证路径授权、选择器取消返回与窗口间预览隔离，不能替代真实系统对话框操作。
+
+真实 Chrome 界面测试目前在 Ubuntu 执行，覆盖动态第五个 Agent、导入/编辑、档案根确认、范围切换、逐组结果与恢复，以及 320–1024px 和暗色截图；未声称在三个系统分别执行同一浏览器 GUI 自动化。

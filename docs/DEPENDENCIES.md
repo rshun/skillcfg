@@ -29,3 +29,21 @@ serde_yaml 为参考项目所用版本，已知不再积极维护。本阶段仅
 阶段一面向 Linux/macOS/Windows 的核心与只读能力；桌面构建和安装包属于后续阶段，不将本阶段核心测试通过说成桌面已可用。
 
 第二阶段生成的 CLI 为纯 Rust 命令行程序，四个原生 runner 在测试和 Clippy 后构建 release 二进制并上传 Actions 制品。锁文件图由 GitHub 更新后取回；桌面/Node 依赖不包含在本阶段。
+
+## 第三阶段桌面依赖
+
+用户已授权第三阶段继续在 GitHub 处理全部依赖、编译、测试和打包；本机仍不安装。前端沿用参考项目锁定版本，原生插件版本由 GitHub 解算后精确锁定。新增依赖仅服务已确认桌面界面与原生目录选择。
+
+| 包 | 精确版本 | 用途 |
+|---|---|---|
+| react / react-dom | 19.3.1 | 工作台与任务弹窗 |
+| @types/react / @types/react-dom | 19.3.0 | TypeScript 类型 |
+| @tauri-apps/api / @tauri-apps/cli | 2.12.4 | 固定命令 IPC 与构建图标工具 |
+| vite / @vitejs/plugin-react | 8.3.5 / 6.1.2 | 前端构建 |
+| typescript | 5.9.3 | 严格类型检查 |
+| tauri / tauri-build | 2.12.5 / 2.7.4 | 薄桌面外壳与资源嵌入 |
+| tauri-plugin-dialog | 2.8.4 | 原生目录选择，取消返回 None |
+
+`apps/web/package-lock.json` 与独立原生工作区 `apps/web/src-tauri/Cargo.lock` 均由 GitHub 生成后归档；原生锁图共 420 个包。原生工作区隔离系统 WebView 依赖，根工作区核心/CLI 流程维持独立；两条流水线均为阶段必需检查。
+
+浏览器测试使用 runner 已有 Chrome 和 Node 标准库 CDP，不新增浏览器测试框架。Linux 系统构建依赖（WebKitGTK/AppIndicator/librsvg/patchelf）与截图中文字库 fonts-noto-cjk 只在 GitHub 临时 runner 安装；所有 Actions 固定 commit，不使用浮动 tag。

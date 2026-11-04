@@ -6,12 +6,13 @@
 
 ## 当前状态
 
-第一阶段核心和只读发现已验收。第二阶段的完整包备份、库管理、手动预览/应用/恢复及 CLI 已通过独立审阅修复与四平台 GitHub 验收。桌面界面属于第三阶段。
+第一阶段核心和只读发现已验收。第二阶段的完整包备份、库管理、手动预览/应用/恢复及 CLI 已通过独立审阅修复与四平台 GitHub 验收。第三阶段正在完成桌面工作台与原生桥接验收，安装包与实际 Agent 加载属于第四阶段。
 
 - [完整设计](docs/superpowers/specs/2026-11-01-skill-hub-design.md)
 - [实施计划](docs/superpowers/plans/2026-11-01-skill-hub.md)
 - [阶段进度](docs/PROGRESS.md)
 - [CLI 使用](docs/CLI.md)
+- [桌面工作台说明](docs/DESKTOP.md)
 - [写入与恢复边界](docs/SAFETY.md)
 - [依赖清单](docs/DEPENDENCIES.md)
 - [设计审阅](docs/reviews/design-review.md)
