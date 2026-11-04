@@ -68,16 +68,17 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
     const p = await page('window.badLibrary=true'); assert.ok((await p.text()).includes('无法读取配置库')); assert.equal(await p.evaluate('!!document.querySelector("[data-action=edit-skill]")'), false);
   });
   await t.test('responsive screenshots, dark theme and dialog keyboard focus', async () => {
-    const p = await page(); await mkdir('artifacts', { recursive: true });
+    const p = await page(); await mkdir('artifacts', { recursive: true }); await p.evaluate('document.fonts.ready');
     for (const width of [1024, 850, 650, 390, 320]) {
       await p.call('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
       assert.ok(await p.evaluate('document.documentElement.scrollWidth<=window.innerWidth'), `overflow at ${width}`);
       const shot = await p.call('Page.captureScreenshot', { format: 'png' }); await writeFile(`artifacts/library-${width}.png`, Buffer.from(shot.data, 'base64'));
     }
     await p.call('Emulation.setDeviceMetricsOverride', { width: 1024, height: 900, deviceScaleFactor: 1, mobile: false }); await p.click('[data-action="theme"]');
+    await p.evaluate('Promise.all(document.getAnimations().map(a=>a.finished.catch(()=>{})))');
     const dark = await p.call('Page.captureScreenshot', { format: 'png' }); await writeFile('artifacts/library-dark.png', Buffer.from(dark.data, 'base64'));
     await p.click('[data-action="edit-skill"]'); await until(() => p.evaluate('!!document.querySelector("dialog[open]")'), 'dialog');
-    await p.call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape' }); await p.call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape' });
+    await p.call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 }); await p.call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
     await until(() => p.evaluate('!document.querySelector("dialog[open]")'), 'dialog close'); assert.equal(await p.evaluate('document.activeElement.dataset.action'), 'edit-skill');
   });
 });

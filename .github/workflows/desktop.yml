@@ -44,6 +44,9 @@ jobs:
         id: web-build
         if: success() || failure()
         run: npm --prefix apps/web run build
+      - name: Chinese system fonts for cloud screenshots
+        if: ${{ !cancelled() && steps.web-build.outcome == 'success' }}
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
       - name: Real Chrome workbench scenarios
         if: ${{ !cancelled() && steps.web-build.outcome == 'success' }}
         run: npm --prefix apps/web run test:gui

@@ -40,6 +40,7 @@ export async function browser(t) {
     const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
     const call = (m, p = {}) => send(m, p, sessionId);
     await call('Page.enable');
+    await call('Page.bringToFront');
     await call('Page.addScriptToEvaluateOnNewDocument', { source: `(${fixture.toString()})();${setup}` });
     const evaluate = async expression => {
       const r = await call('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
@@ -49,7 +50,7 @@ export async function browser(t) {
     await until(() => evaluate('document.querySelector("#root")?.textContent?.includes("Skill Hub")'), 'React ready');
     return { call, evaluate, click: async selector => {
       await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(selector)})`),`control: ${selector}`);
-      await evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
+      await evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)});el.focus();el.click(); })()`);
     }, fill: (selector, value) => evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if (!el) throw new Error('Missing input'); Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)}); el.dispatchEvent(new Event('input',{bubbles:true})); })()`),
     text: () => evaluate('document.body.innerText'), ready: () => until(() => evaluate('!!document.querySelector("[data-ready=true]")'), 'workbench loaded') };
   } };

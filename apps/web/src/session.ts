@@ -21,7 +21,7 @@ export class SessionController {
     selectionFromCells([key]); const cells = new Set(this.state.selection); if (checked) cells.add(key); else cells.delete(key);
     ++this.epoch; this.update({ selection: [...cells], preview: null, phase: 'idle', error: null });
   }
-  async clear() { if (this.state.phase === 'confirming') return; await this.cancel(); this.update({ selection: [] }); }
+  async clear() { if (this.state.phase === 'confirming') return; if (this.state.phase !== 'result') await this.cancel(); this.update({ selection: [] }); }
   async cancel() {
     if (this.state.phase === 'confirming') return;
     const id = this.state.preview?.previewId; ++this.epoch; this.update({ preview: null, phase: 'idle', receipt: null, error: null, kind: null });
@@ -29,12 +29,14 @@ export class SessionController {
   }
   async context(update: Partial<Pick<SessionState, 'libraryPath' | 'scope' | 'projectRoot'>>) {
     if (this.state.phase === 'confirming') return false;
+    const previous = { libraryPath: this.state.libraryPath, scope: this.state.scope, projectRoot: this.state.projectRoot };
     const next = { ...this.state, ...update };
     if (next.scope === 'project' && !next.projectRoot) return false;
     ++this.epoch;
     this.update({ ...update, generation: this.state.generation + 1, selection: [], preview: null, phase: 'idle', receipt: null, error: null, kind: null });
-    try { await this.call('set_context', { scope: next.scope, projectRoot: next.projectRoot }); return true; }
-    catch (error) { this.update({ error: errorCode(error) }); return false; }
+    const generation = this.state.generation;
+    try { await this.call('set_context', { scope: next.scope, projectRoot: next.projectRoot }); return generation === this.state.generation; }
+    catch (error) { if (generation === this.state.generation) this.update({ ...previous, error: errorCode(error) }); return false; }
   }
   async pickProject() {
     if (this.state.phase === 'confirming') return false;

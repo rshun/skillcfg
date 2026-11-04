@@ -395,15 +395,23 @@ impl DesktopSession {
                 let r: Agent = decode(request)?;
                 let (document, revision) = self.app.read_agent_profile_document(&r.agent_id)?;
                 let env = &self.app.context.env;
-                let registry = load_registry(&RegistrySource {
-                    builtins: registry::builtin_profiles(),
-                    custom_dir: env.home.join(".skill-hub/agents"),
-                    approvals_path: Some(env.home.join(".skill-hub/agent-approvals.json")),
-                }, env)?;
-                let overrides = registry.approvals.into_iter()
+                let registry = load_registry(
+                    &RegistrySource {
+                        builtins: registry::builtin_profiles(),
+                        custom_dir: env.home.join(".skill-hub/agents"),
+                        approvals_path: Some(env.home.join(".skill-hub/agent-approvals.json")),
+                    },
+                    env,
+                )?;
+                let overrides = registry
+                    .approvals
+                    .into_iter()
                     .find(|a| a.id == r.agent_id && a.platform == env.platform)
-                    .map(|a| a.overrides).unwrap_or_default();
-                Ok(json!({"profileJson":document,"revision":revision,"localRootOverrides":overrides}))
+                    .map(|a| a.overrides)
+                    .unwrap_or_default();
+                Ok(
+                    json!({"profileJson":document,"revision":revision,"localRootOverrides":overrides}),
+                )
             }
             "preview_agent_profile" => {
                 let r: Profile = decode(request)?;
