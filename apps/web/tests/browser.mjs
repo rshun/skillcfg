@@ -51,7 +51,9 @@ export async function browser(t) {
     return { call, evaluate, click: async selector => {
       await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(selector)})`),`control: ${selector}`);
       await evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)});el.focus();el.click(); })()`);
-    }, fill: (selector, value) => evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if (!el) throw new Error('Missing input'); Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)}); el.dispatchEvent(new Event('input',{bubbles:true})); })()`),
+    }, fill: async (selector, value) => {
+      await until(()=>evaluate(`!!document.querySelector(${JSON.stringify(selector)})`),`input: ${selector}`);
+      return evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)}); if (!el) throw new Error('Missing input'); Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)}); el.dispatchEvent(new Event('input',{bubbles:true})); })()`); },
     text: () => evaluate('document.body.innerText'), ready: () => until(() => evaluate('!!document.querySelector("[data-ready=true]")'), 'workbench loaded') };
   } };
 }

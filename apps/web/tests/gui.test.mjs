@@ -113,6 +113,10 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
     await until(()=>p.evaluate('document.body.innerText.includes("/fixture/source-link")'),'user inventory');await p.click('[data-scope="project"]');
     await until(()=>p.evaluate('document.body.innerText.includes("project-only-skill")'),'project inventory');
   });
+  await t.test('no-op receipt never claims that files were applied',async()=>{
+    const p=await page('window.noWrite=true');await p.click('[data-target="codex"]');await p.click('[data-action="preview-distribution"]');await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'preview');await p.click('[data-action="confirm-preview"]');
+    await until(()=>p.evaluate('!!document.querySelector(".result-title")'),'receipt');assert.ok((await p.text()).includes('没有写入内容'));assert.equal((await p.text()).includes('文件已应用'),false);
+  });
   await t.test('four page and task screenshots at desktop and narrow widths',async()=>{
     const p=await page();await mkdir('artifacts',{recursive:true});await p.evaluate('document.fonts.ready');
     for(const width of [1024,320]){
