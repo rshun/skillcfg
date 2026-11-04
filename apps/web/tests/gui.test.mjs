@@ -67,6 +67,60 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
   await t.test('corrupt_library_is_not_an_empty_editable_library', async () => {
     const p = await page('window.badLibrary=true'); assert.ok((await p.text()).includes('无法读取配置库')); assert.equal(await p.evaluate('!!document.querySelector("[data-action=edit-skill]")'), false);
   });
+  await t.test('invalid profile keeps valid agents usable and source aliases visible', async () => {
+    const p=await page('window.invalidProfile=true'); await p.click('[data-target="codex"]');
+    assert.equal(await p.evaluate('document.querySelector("[data-action=preview-distribution]").disabled'),false);
+    await p.click('[data-page="agents"]');assert.ok((await p.text()).includes('损坏档案'));await p.click('[data-agent="codex"]');
+    await until(()=>p.evaluate('document.body.innerText.includes("/fixture/source-link")'),'alias');
+    assert.ok((await p.text()).includes('/fixture/source/code-review'));
+  });
+  await t.test('profile disable explains retained files and clears old pairs', async () => {
+    const p=await page();await p.click('[data-target="codex"]');await p.click('[data-page="agents"]');await p.click('[data-agent="codex"]');
+    await p.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent==="停用档案").click()');
+    assert.ok((await p.text()).includes('不会卸载或删除'));await p.click('[data-action="confirm-disable"]');
+    await until(()=>p.evaluate('window.calls.some(([c])=>c==="set_agent_profile_enabled")'),'disable');
+    await until(()=>p.evaluate('!document.querySelector("dialog[open]")'),'disable complete');await p.click('[data-page="library"]');
+    assert.equal(await p.evaluate('document.querySelector("[data-target=codex]").disabled'),true);
+    assert.equal(await p.evaluate('document.querySelector("[data-action=preview-distribution]").disabled'),true);
+  });
+  await t.test('unsaved edits and settings require discard confirmation', async () => {
+    const p=await page('window.acceptDiscard=false');await p.click('[data-action="edit-skill"]');
+    await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','unsaved');await p.click('dialog button[aria-label="关闭"]');
+    assert.ok(await p.evaluate('!!document.querySelector("dialog[open]")'));await p.evaluate('window.acceptDiscard=true');await p.click('dialog button[aria-label="关闭"]');
+    await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/another-library');await p.evaluate('window.acceptDiscard=false');await p.click('[data-page="history"]');
+    assert.ok(await p.evaluate('!!document.querySelector("[data-action=save-settings]")'));await p.evaluate('window.acceptDiscard=true');await p.click('[data-page="library"]');
+  });
+  await t.test('settings library switch clears pairs without automatic apply', async () => {
+    const p=await page();await p.click('[data-target="codex"]');await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/another-library');await p.click('[data-action="save-settings"]');
+    await until(()=>p.evaluate('window.calls.filter(([c])=>c==="set_context").length>=2'),'new library');await p.click('[data-page="library"]');
+    assert.equal(await p.evaluate('document.querySelector("[data-action=preview-distribution]").disabled'),true);assert.equal(await p.evaluate('window.calls.some(([c])=>c==="commit_distribution")'),false);
+  });
+  await t.test('custom shared reader is dynamic and cancellation never commits', async () => {
+    const p=await page('window.fifth=true;window.customReader=true');await p.click('[data-target="codex"]');await p.click('[data-action="preview-distribution"]');
+    await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'preview');assert.ok((await p.text()).includes('Fifth Agent（读取条件未知）'));
+    await p.click('dialog button[aria-label="关闭"]');assert.equal(await p.evaluate('window.calls.some(([c])=>c==="commit_distribution")'),false);
+    assert.ok(await p.evaluate('document.querySelector("[data-target=codex]").checked'));
+  });
+  await t.test('failed restore consumes preview and pending recovery survives reload', async () => {
+    const p=await page('window.pendingRecovery=true;window.failRestore=true');assert.ok((await p.text()).includes('事务需要处理'));await p.click('[data-page="history"]');
+    await p.click('[data-action="preview-recovery"]');await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'recovery preview');await p.click('[data-action="confirm-preview"]');
+    await until(()=>p.evaluate('document.body.innerText.includes("本次确认已消费")'),'restore failure');assert.equal(await p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),false);
+    assert.equal(await p.evaluate('window.calls.filter(([c])=>c==="commit_restore").length'),1);await p.click('dialog button[aria-label="关闭"]');
+    await p.call('Page.reload');await p.ready();assert.ok((await p.text()).includes('事务需要处理'));
+  });
+  await t.test('four page and task screenshots at desktop and narrow widths',async()=>{
+    const p=await page();await mkdir('artifacts',{recursive:true});await p.evaluate('document.fonts.ready');
+    for(const width of [1024,320]){
+      await p.call('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:false});
+      for(const page of ['agents','history','settings']){
+        await p.click(`[data-page="${page}"]`);await until(()=>p.evaluate('!document.querySelector(".loading")'),'page data');
+        assert.ok(await p.evaluate('document.documentElement.scrollWidth<=window.innerWidth'),`${page} overflow ${width}`);
+        const shot=await p.call('Page.captureScreenshot',{format:'png'});await writeFile(`artifacts/${page}-${width}.png`,Buffer.from(shot.data,'base64'));
+      }
+      await p.click('[data-page="library"]');await p.click('[data-target="codex"]');await p.click('[data-action="preview-distribution"]');await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'preview');
+      const shot=await p.call('Page.captureScreenshot',{format:'png'});await writeFile(`artifacts/preview-${width}.png`,Buffer.from(shot.data,'base64'));await p.click('dialog button[aria-label="关闭"]');await p.click('[data-target="codex"]');
+    }
+  });
   await t.test('responsive screenshots, dark theme and dialog keyboard focus', async () => {
     const p = await page(); await mkdir('artifacts', { recursive: true }); await p.evaluate('document.fonts.ready');
     for (const width of [1024, 850, 650, 390, 320]) {
