@@ -49,3 +49,9 @@ test('rejected native context switch cannot leave the UI claiming a different sc
   const {session}=fixture(async c=>{if(c==='set_context')throw {code:'invalid_project'};return null;});
   assert.equal(await session.context({scope:'project',projectRoot:'/missing'}),false);assert.equal(session.state.scope,'user');assert.equal(session.state.projectRoot,null);
 });
+
+test('late cancelled preview is released by exact ID without consuming a newer preview',async()=>{
+  let release,first=true;const {session,calls}=fixture(async c=>c==='preview_distribution'?(first?(first=false,new Promise(r=>{release=r;})):preview('new')):null);
+  const old=session.prepare('distribution');await session.cancel();await session.prepare('distribution');release(preview('late'));await old;
+  assert.deepEqual(calls.find(([c,a])=>c==='cancel_preview'&&a.previewId==='late'),['cancel_preview',{previewId:'late'}]);assert.equal(session.state.preview.previewId,'new');
+});

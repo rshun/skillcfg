@@ -148,6 +148,28 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
       }
     }
   });
+  await t.test('invalidated profile preview is cancelled by its exact ID',async()=>{
+    const p=await page();await p.click('[data-page="agents"]');await p.click('[data-action="add-profile"]');await p.click('[data-action="preview-profile"]');await until(()=>p.evaluate('!!document.querySelector("[data-action=commit-profile]")'),'profile preview');await p.fill('dialog input[value="Example Agent"]','Changed Agent');
+    await until(()=>p.evaluate('window.calls.some(([c,a])=>c==="cancel_preview"&&a.previewId==="profile-preview")'),'profile cancellation');
+  });
+  await t.test('binary removals, empty directories and permission-only changes are explicit',async()=>{
+    const p=await page('window.binaryRemoval=true');await p.click('[data-target="codex"]');await p.click('[data-action="preview-distribution"]');await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'preview');
+    const text=await p.text();assert.ok(text.includes('old-image.bin'));assert.ok(text.includes('移出加载目录'));assert.ok(text.includes('仅改变执行权限'));assert.ok(text.includes('目录'));
+  });
+  await t.test('failed project reads cannot reuse user-scope status or installation evidence',async()=>{
+    const p=await page('window.failProjectRead=true');await until(()=>p.evaluate('document.body.innerText.includes("内容一致")'),'initial status');await p.click('[data-scope="project"]');await until(()=>p.evaluate('document.body.innerText.includes("无法读取目标状态")'),'project read failure');
+    assert.equal((await p.text()).includes('内容一致'),false);await p.click('[data-page="agents"]');await until(()=>p.evaluate('document.body.innerText.includes("无法检查安装状态")'),'detection failure');assert.equal((await p.text()).includes('已检测到 Agent'),false);
+  });
+  await t.test('user scope does not retain a removed project root',async()=>{
+    const p=await page();await p.click('[data-scope="project"]');await until(()=>p.evaluate('document.querySelector("[data-scope=project]").getAttribute("aria-pressed")==="true"'),'project');await p.evaluate('window.removedProject=true');await p.click('[data-scope="user"]');
+    await until(()=>p.evaluate('document.querySelector("[data-scope=user]").getAttribute("aria-pressed")==="true"'),'user scope');assert.equal(await p.evaluate('window.calls.filter(([c])=>c==="set_context").at(-1)[1].projectRoot'),null);
+  });
+  await t.test('viewing a profile does not permanently break disable',async()=>{
+    const p=await page('window.staleDisable=true');await p.click('[data-page="agents"]');await p.click('[data-agent="codex"]');await p.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent==="查看 / 配置目录").click()');await until(()=>p.evaluate('window.profileRead===true'),'profile read');await p.click('dialog button[aria-label="关闭"]');await p.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent==="停用档案").click()');await p.click('[data-action="confirm-disable"]');await until(()=>p.evaluate('!document.querySelector("dialog[open]")'),'disable with fresh credential');
+  });
+  await t.test('profile enabled toggle is an unsaved change',async()=>{
+    const p=await page();await p.click('[data-page="agents"]');await p.click('[data-action="add-profile"]');await p.click('dialog .switch-label input');await p.click('dialog button[aria-label="关闭"]');await p.click('[data-action="discard-cancel"]');assert.ok(await p.evaluate('!!document.querySelector("[data-action=preview-profile]")'));
+  });
   await t.test('four page and task screenshots at desktop and narrow widths',async()=>{
     const p=await page();await mkdir('artifacts',{recursive:true});await p.evaluate('document.fonts.ready');
     for(const width of [1024,320]){
