@@ -117,6 +117,37 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
     const p=await page('window.noWrite=true');await p.click('[data-target="codex"]');await p.click('[data-action="preview-distribution"]');await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'preview');await p.click('[data-action="confirm-preview"]');
     await until(()=>p.evaluate('!!document.querySelector(".result-title")'),'receipt');assert.ok((await p.text()).includes('没有写入内容'));assert.equal((await p.text()).includes('文件已应用'),false);
   });
+  await t.test('native async confirm never discards edited text without an app decision',async()=>{
+    const p=await page('window.confirm=async()=>false');await p.click('[data-action="edit-skill"]');await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','keep native draft');await p.click('dialog button[aria-label="关闭"]');
+    await p.click('[data-action="discard-cancel"]');assert.equal(await p.evaluate('document.querySelector("textarea[name=document]")?.value'),'keep native draft');
+  });
+  await t.test('resolved failed edit receipts preserve drafts and show every outcome',async()=>{
+    for(const outcome of ['failed_restored','recovery_required','audit_failed']){
+      const p=await page(`window.failReceipt="${outcome}"`);await p.click('[data-action="edit-skill"]');await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','keep receipt draft');await p.click('[data-action="save-document"]');
+      await until(()=>p.evaluate('!!document.querySelector("[data-mutation-receipt]")'),'failed receipt');assert.equal(await p.evaluate('document.querySelector("textarea[name=document]")?.value'),'keep receipt draft');assert.ok((await p.text()).includes('/fixture/first'));assert.ok((await p.text()).includes('/fixture/failed'));
+    }
+  });
+  await t.test('resolved failed profile save and disable never close as success',async()=>{
+    const p=await page('window.failReceipt="failed_restored"');await p.click('[data-page="agents"]');await p.click('[data-action="add-profile"]');await p.click('[data-action="preview-profile"]');await p.click('[data-action="acknowledge-roots"]');await p.click('[data-action="commit-profile"]');
+    await until(()=>p.evaluate('!!document.querySelector("[data-mutation-receipt]")'),'profile failure');assert.ok((await p.text()).includes('添加 Agent'));await p.click('dialog button[aria-label="关闭"]');await p.click('[data-agent="codex"]');await p.evaluate('[...document.querySelectorAll("button")].find(b=>b.textContent==="停用档案").click()');await p.click('[data-action="confirm-disable"]');
+    await until(()=>p.evaluate('!!document.querySelector("[data-mutation-receipt]")'),'disable failure');assert.ok((await p.text()).includes('停用 Agent 档案'));
+  });
+  await t.test('corrected edit and settings can retry using fresh matching baselines',async()=>{
+    const p=await page('window.retryEdit=true;window.retrySettings=true');await p.click('[data-action="edit-skill"]');await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','invalid first draft');await p.click('[data-action="save-document"]');await until(()=>p.evaluate('!!document.querySelector("[data-editor-error]")'),'validation error');
+    await p.fill('textarea[name=document]','---\nname: code-review\ndescription: Corrected.\n---\nCorrected draft.');await p.click('[data-action="save-document"]');await until(()=>p.evaluate('!document.querySelector("dialog[open]")'),'corrected edit saved');
+    await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/overlap');await p.click('[data-action="save-settings"]');await until(()=>p.evaluate('document.querySelector(".settings-panel [role=alert]")'),'settings validation error');await p.fill('input[aria-label="配置库目录"]','/fixture/corrected-library');await p.click('[data-action="save-settings"]');await until(()=>p.evaluate('window.settingsSaved===true'),'corrected settings saved');
+  });
+  await t.test('retry refuses an externally changed edit or settings baseline',async()=>{
+    for(const kind of ['edit','settings']){
+      const p=await page(`window.retry${kind==='edit'?'Edit':'Settings'}=true`);
+      if(kind==='edit'){
+        await p.click('[data-action="edit-skill"]');await until(()=>p.evaluate('!!document.querySelector("textarea[name=document]")'),'editor');await p.fill('textarea[name=document]','keep changed baseline draft');await p.click('[data-action="save-document"]');await until(()=>p.evaluate('!!document.querySelector("[data-editor-error]")'),'first error');await p.evaluate('window.externalEdit=true');await p.click('[data-action="save-document"]');
+        await until(()=>p.evaluate('!document.querySelector("[data-action=save-document]").disabled'),'retry complete');assert.equal(await p.evaluate('window.calls.filter(([c])=>c==="save_skill_document").length'),1);assert.equal(await p.evaluate('document.querySelector("textarea[name=document]").value'),'keep changed baseline draft');
+      }else{
+        await p.click('[data-page="settings"]');await p.fill('input[aria-label="配置库目录"]','/fixture/changed');await p.click('[data-action="save-settings"]');await until(()=>p.evaluate('!!document.querySelector(".settings-panel [role=alert]")'),'first error');await p.evaluate('window.externalSettings=true');await p.click('[data-action="save-settings"]');await until(()=>p.evaluate('!document.querySelector("[data-action=save-settings]").disabled'),'retry complete');assert.equal(await p.evaluate('window.calls.filter(([c])=>c==="save_settings").length'),1);
+      }
+    }
+  });
   await t.test('four page and task screenshots at desktop and narrow widths',async()=>{
     const p=await page();await mkdir('artifacts',{recursive:true});await p.evaluate('document.fonts.ready');
     for(const width of [1024,320]){
