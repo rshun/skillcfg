@@ -1,9 +1,7 @@
 use serde_json::{json, Value};
 use skill_desktop::bridge::DesktopSession;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::path::PathBuf;
 
 fn isolated_workspace() -> (DesktopSession, PathBuf, PathBuf) {
     let root = std::env::temp_dir().join(skill_io::disk::operation_id());
@@ -17,7 +15,7 @@ fn isolated_workspace() -> (DesktopSession, PathBuf, PathBuf) {
 }
 
 #[cfg(unix)]
-fn mark_executable(path: &Path) {
+fn mark_executable(path: &std::path::Path) {
     use std::os::unix::fs::PermissionsExt;
     let mut perms = fs::metadata(path).unwrap().permissions();
     perms.set_mode(0o755);
@@ -25,7 +23,7 @@ fn mark_executable(path: &Path) {
 }
 
 #[cfg(unix)]
-fn is_executable(path: &Path) -> bool {
+fn is_executable(path: &std::path::Path) -> bool {
     use std::os::unix::fs::PermissionsExt;
     (fs::metadata(path).unwrap().permissions().mode() & 0o111) != 0
 }
