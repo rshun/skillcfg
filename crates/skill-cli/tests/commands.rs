@@ -2,15 +2,18 @@ use std::{
     fs,
     path::{Path, PathBuf},
     process::{Command, Output},
+    sync::atomic::{AtomicU64, Ordering},
 };
 fn home() -> PathBuf {
+    static SERIAL: AtomicU64 = AtomicU64::new(0);
     let p = std::env::temp_dir().join(format!(
-        "skill-cli-{}-{}",
+        "skill-cli-{}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_nanos()
+            .as_nanos(),
+        SERIAL.fetch_add(1, Ordering::Relaxed)
     ));
     fs::create_dir_all(&p).unwrap();
     fs::canonicalize(p).unwrap()
