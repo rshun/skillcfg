@@ -61,7 +61,7 @@ pub fn parse_skill_document(bytes: &[u8]) -> Result<SkillMetadata, CoreError> {
     })
 }
 
-pub fn valid_relative_path(path: &str, platform: Platform) -> bool {
+pub fn valid_relative_path(path: &str, _platform: Platform) -> bool {
     if path.is_empty()
         || path.starts_with('/')
         || path.contains(['\\', '\0'])
@@ -72,9 +72,6 @@ pub fn valid_relative_path(path: &str, platform: Platform) -> bool {
     path.split('/').all(|part| {
         if part.is_empty() || part == "." || part == ".." {
             return false;
-        }
-        if platform != Platform::Windows {
-            return true;
         }
         if part.ends_with(['.', ' '])
             || part
@@ -125,11 +122,7 @@ pub fn validate_package(tree: &PackageTree, platform: Platform) -> Vec<PackageIs
         if path.split('/').count() > MAX_DEPTH {
             issue("too_deep", Some(path));
         }
-        let key = if platform == Platform::Windows {
-            path.to_lowercase()
-        } else {
-            path.clone()
-        };
+        let key = path.to_lowercase();
         if let Some((old_path, old_kind)) = paths.insert(key, (path, &entry.kind)) {
             issue(
                 if old_path == path {

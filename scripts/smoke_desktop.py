@@ -63,29 +63,8 @@ def terminate_process_tree(proc: subprocess.Popen[bytes]) -> None:
         proc.wait(timeout=5)
 
 
-def verify_desktop_smoke(desktop_bin: Path) -> dict[str, object]:
-    if not desktop_bin.is_file() or desktop_bin.stat().st_size == 0:
-        raise RuntimeError(f"missing desktop binary: {desktop_bin}")
-
-    # 1. Relative --home must be rejected cleanly with exit code 1 before starting UI.
-    bad = subprocess.run(
-        [str(desktop_bin), "--home", "relative-non-absolute-home"],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=20,
-        check=False,
-    )
-    if bad.returncode != 1 or "desktop_environment_unavailable" not in bad.stderr:
-        raise RuntimeError(
-            f"unexpected relative --home result: code={bad.returncode}, stderr={bad.stderr!r}"
-        )
-
-    # 2. Launch native desktop process with isolated absolute --home and verify it stays alive
-    #    without crashing and without creating .skill-hub state on startup (A12).
-    smoke_home = Path(tempfile.mkdtemp(prefix="skill-hub-desktop-smoke-")).resolve()
-    cmd = [str(desktop_bin), "--home", str(smoke_home)]
+def launch_desktop_alive(desktop_bin: Path, target_home: Path, seconds: float = 3.0) -> str:
+    cmd = [str(desktop_bin), "--home", str(target_home)]
     env = os.environ.copy()
     launch_mode = "native-display"
 
@@ -112,7 +91,7 @@ def verify_desktop_smoke(desktop_bin: Path) -> dict[str, object]:
 
     proc = subprocess.Popen(cmd, **popen_kwargs)  # type: ignore[arg-type]
     try:
-        deadline = time.monotonic() + 3.0
+        deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
             exit_code = proc.poll()
             if exit_code is not None:
@@ -122,13 +101,39 @@ def verify_desktop_smoke(desktop_bin: Path) -> dict[str, object]:
                     f"desktop exited prematurely with code {exit_code}: {stderr_text}"
                 )
             time.sleep(0.25)
-
-        if (smoke_home / ".skill-hub").exists():
-            raise RuntimeError("desktop created .skill-hub during read-only startup")
     finally:
         terminate_process_tree(proc)
         if proc.stderr:
             proc.stderr.close()
+
+    return launch_mode
+
+
+def verify_desktop_smoke(desktop_bin: Path) -> dict[str, object]:
+    if not desktop_bin.is_file() or desktop_bin.stat().st_size == 0:
+        raise RuntimeError(f"missing desktop binary: {desktop_bin}")
+
+    # 1. Relative --home must be rejected cleanly with exit code 1 before starting UI.
+    bad = subprocess.run(
+        [str(desktop_bin), "--home", "relative-non-absolute-home"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=20,
+        check=False,
+    )
+    if bad.returncode != 1 or "desktop_environment_unavailable" not in bad.stderr:
+        raise RuntimeError(
+            f"unexpected relative --home result: code={bad.returncode}, stderr={bad.stderr!r}"
+        )
+
+    # 2. Launch native desktop process with isolated absolute --home and verify it stays alive
+    #    without crashing and without creating .skill-hub state on startup (A12).
+    smoke_home = Path(tempfile.mkdtemp(prefix="skill-hub-desktop-smoke-")).resolve()
+    launch_mode = launch_desktop_alive(desktop_bin, smoke_home, seconds=3.0)
+    if (smoke_home / ".skill-hub").exists():
+        raise RuntimeError("desktop created .skill-hub during read-only startup")
 
     return {
         "relativeHomeRejectedExit1": True,
@@ -138,7 +143,9 @@ def verify_desktop_smoke(desktop_bin: Path) -> dict[str, object]:
     }
 
 
-def verify_fifth_agent_zero_recompile(cli_bin: Path, repo_root: Path) -> dict[str, object]:
+def verify_fifth_agent_zero_recompile(
+    desktop_bin: Path, cli_bin: Path, repo_root: Path
+) -> dict[str, object]:
     if not cli_bin.is_file() or cli_bin.stat().st_size == 0:
         raise RuntimeError(f"missing cli binary: {cli_bin}")
 
@@ -212,7 +219,26 @@ def verify_fifth_agent_zero_recompile(cli_bin: Path, repo_root: Path) -> dict[st
     ):
         raise RuntimeError(f"expected custom.fifth in possibleReaders, got {readers!r}")
 
-    # Apply to custom.fifth, verify exact bytes & Unix execute bit, then restore.
+    # Flip boolean config probe to false and verify dynamic reader evidence updates to configDisabled.
+    (home / ".fifth/config.json").write_text(
+        '{"compat":{"shared":{"skills":false}}}', encoding="utf-8"
+    )
+    diff_disabled = run_cli(cli_bin, home, ["diff", "--pair", f"{pkg_id}=codex"])
+    if diff_disabled.returncode != 0:
+        raise RuntimeError(f"diff codex (probe disabled) failed: {diff_disabled.stderr}")
+    disabled_readers = json.loads(diff_disabled.stdout)["groups"][0]["possibleReaders"]
+    if not any(
+        r.get("agent") == "custom.fifth" and r.get("evidence") == "configDisabled"
+        for r in disabled_readers
+    ):
+        raise RuntimeError(
+            f"expected custom.fifth configDisabled after probe flip, got {disabled_readers!r}"
+        )
+    (home / ".fifth/config.json").write_text(
+        '{"compat":{"shared":{"skills":true}}}', encoding="utf-8"
+    )
+
+    # Apply to custom.fifth, verify exact bytes & Unix execute bit, launch packaged desktop on fifth home, then restore.
     applied = run_cli(cli_bin, home, ["apply", "--pair", f"{pkg_id}=custom.fifth", "--yes"])
     if applied.returncode != 0:
         raise RuntimeError(f"apply custom.fifth failed: {applied.stderr}")
@@ -227,6 +253,8 @@ def verify_fifth_agent_zero_recompile(cli_bin: Path, repo_root: Path) -> dict[st
         if not (mode & stat.S_IXUSR):
             raise RuntimeError("Unix execute bit lost on fifth-agent apply")
 
+    launch_desktop_alive(desktop_bin, home, seconds=2.5)
+
     restored = run_cli(cli_bin, home, ["restore", applied_json["operationId"], "--yes"])
     if restored.returncode != 0:
         raise RuntimeError(f"restore custom.fifth failed: {restored.stderr}")
@@ -237,6 +265,8 @@ def verify_fifth_agent_zero_recompile(cli_bin: Path, repo_root: Path) -> dict[st
         "invalidProfileRejected": True,
         "unapprovedProfileRejected": True,
         "dynamicSharedReaderVerified": True,
+        "probeFlipVerified": True,
+        "desktopBootWithFifthAgentVerified": True,
         "applyAndRestoreVerified": True,
         "importOperationId": records["operationId"],
         "applyOperationId": applied_json["operationId"],
@@ -259,7 +289,7 @@ def main() -> None:
     cli_sha_before = sha256_file(cli_bin)
 
     desktop_result = verify_desktop_smoke(desktop_bin)
-    fifth_result = verify_fifth_agent_zero_recompile(cli_bin, repo_root)
+    fifth_result = verify_fifth_agent_zero_recompile(desktop_bin, cli_bin, repo_root)
 
     desktop_sha_after = sha256_file(desktop_bin)
     cli_sha_after = sha256_file(cli_bin)

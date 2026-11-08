@@ -147,12 +147,12 @@ fn claude_to_codex_grok_end_to_end_and_fifth_agent_negative_guards() {
     )
     .unwrap();
 
-    // Windows reserved device name inside a package must be rejected across all platforms.
-    let bad_pkg = p.join("bad-reserved");
+    // Portable reserved-name and Unix symlink package entries must be rejected without writing library.
+    let bad_pkg = p.join("bad-entry");
     fs::create_dir_all(&bad_pkg).unwrap();
     fs::write(
         bad_pkg.join("SKILL.md"),
-        "---\nname: bad-reserved\ndescription: Reserved file.\n---\n",
+        "---\nname: bad-entry\ndescription: Invalid entry.\n---\n",
     )
     .unwrap();
     fs::write(bad_pkg.join("CON.txt"), "blocked").unwrap();
@@ -171,6 +171,32 @@ fn claude_to_codex_grok_end_to_end_and_fifth_agent_negative_guards() {
         .code(),
         Some(1)
     );
+    #[cfg(unix)]
+    {
+        let bad_link = p.join("bad-link");
+        fs::create_dir_all(&bad_link).unwrap();
+        fs::write(
+            bad_link.join("SKILL.md"),
+            "---\nname: bad-link\ndescription: Symlink entry.\n---\n",
+        )
+        .unwrap();
+        std::os::unix::fs::symlink(bad_link.join("SKILL.md"), bad_link.join("linked.md")).unwrap();
+        assert_eq!(
+            run(
+                &p,
+                &[
+                    "import",
+                    "--source",
+                    bad_link.to_str().unwrap(),
+                    "--new",
+                    "--yes"
+                ],
+            )
+            .status
+            .code(),
+            Some(1)
+        );
+    }
 
     // Import valid Claude packages into Hub library.
     success(
@@ -186,10 +212,7 @@ fn claude_to_codex_grok_end_to_end_and_fifth_agent_negative_guards() {
     let list = success(&p, &["list"]);
     let records = list["records"].as_array().unwrap();
     assert_eq!(records.len(), 2);
-    let review_id = records
-        .iter()
-        .find(|r| r["name"] == "code-review")
-        .unwrap()["id"]
+    let review_id = records.iter().find(|r| r["name"] == "code-review").unwrap()["id"]
         .as_str()
         .unwrap();
     let incident_id = records
@@ -236,12 +259,32 @@ fn claude_to_codex_grok_end_to_end_and_fifth_agent_negative_guards() {
             0
         );
     }
-    assert!(p
-        .join(".grok/skills/incident-response/SKILL.md")
-        .is_file());
+    assert!(p.join(".grok/skills/incident-response/SKILL.md").is_file());
     assert!(!p.join(".agents/skills/incident-response").exists());
     assert!(!p.join(".grok/skills/code-review").exists());
     assert!(untouched.join("SKILL.md").is_file());
+
+    // Updating the library record without apply must never mutate applied target roots.
+    fs::write(
+        review.join("SKILL.md"),
+        "---\nname: code-review\ndescription: 库已更新但未重新应用\n---\nUpdated library.\n",
+    )
+    .unwrap();
+    success(
+        &p,
+        &[
+            "import",
+            "--source",
+            review.to_str().unwrap(),
+            "--replace-id",
+            review_id,
+            "--yes",
+        ],
+    );
+    assert_eq!(
+        fs::read(p.join(".agents/skills/code-review/SKILL.md")).unwrap(),
+        review_doc
+    );
 
     // Negative guards for fifth agent: invalid JSON and unapproved profile on disk.
     let invalid_profile = p.join("invalid-profile.json");

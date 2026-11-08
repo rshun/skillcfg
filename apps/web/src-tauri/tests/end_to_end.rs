@@ -103,10 +103,7 @@ fn claude_import_exact_pairs_shared_visibility_edit_and_restore_end_to_end() {
         .unwrap();
 
     // Source Claude directory, unselected Antigravity directory, and Codex/Grok targets stay untouched.
-    assert_eq!(
-        fs::read(review_src.join("SKILL.md")).unwrap(),
-        review_doc
-    );
+    assert_eq!(fs::read(review_src.join("SKILL.md")).unwrap(), review_doc);
     assert_eq!(
         fs::read(antigravity_untouched.join("SKILL.md")).unwrap(),
         untouched_bytes
@@ -119,10 +116,7 @@ fn claude_import_exact_pairs_shared_visibility_edit_and_restore_end_to_end() {
     let library = session.execute("load_library", json!({})).unwrap();
     let records = library["records"].as_array().unwrap();
     assert_eq!(records.len(), 2);
-    let review_id = records
-        .iter()
-        .find(|r| r["name"] == "code-review")
-        .unwrap()["id"]
+    let review_id = records.iter().find(|r| r["name"] == "code-review").unwrap()["id"]
         .as_str()
         .unwrap()
         .to_owned();
@@ -191,9 +185,9 @@ fn claude_import_exact_pairs_shared_visibility_edit_and_restore_end_to_end() {
         .replace('\\', "/")
         .ends_with("/.agents/skills/code-review"));
     let codex_readers = codex_group["possibleReaders"].as_array().unwrap();
-    assert!(codex_readers
-        .iter()
-        .any(|r| r["agent"] == "grok" && r["rootId"] == "user-shared" && r["evidence"] == "declared"));
+    assert!(codex_readers.iter().any(|r| r["agent"] == "grok"
+        && r["rootId"] == "user-shared"
+        && r["evidence"] == "declared"));
     assert!(!codex_readers.iter().any(|r| r["agent"] == "antigravity"));
 
     let grok_group = groups
@@ -205,7 +199,9 @@ fn claude_import_exact_pairs_shared_visibility_edit_and_restore_end_to_end() {
         .unwrap()
         .replace('\\', "/")
         .ends_with("/.grok/skills/incident-response"));
-    assert!(grok_group["possibleReaders"].as_array().unwrap().is_empty());
+    let grok_readers = grok_group["possibleReaders"].as_array().unwrap();
+    assert!(!grok_readers.is_empty());
+    assert!(grok_readers.iter().all(|r| r["agent"] == "grok"));
 
     // 3. Apply manual distribution and verify written bytes, CRLF, binary, execute bit, and post-write statuses.
     let dist_receipt = session
@@ -252,10 +248,22 @@ fn claude_import_exact_pairs_shared_visibility_edit_and_restore_end_to_end() {
             .unwrap()
             .to_owned()
     };
-    assert_eq!(status_of(&statuses_after_write, &review_id, "codex"), "equal");
-    assert_eq!(status_of(&statuses_after_write, &incident_id, "grok"), "equal");
-    assert_eq!(status_of(&statuses_after_write, &review_id, "grok"), "missing");
-    assert_eq!(status_of(&statuses_after_write, &incident_id, "codex"), "missing");
+    assert_eq!(
+        status_of(&statuses_after_write, &review_id, "codex"),
+        "equal"
+    );
+    assert_eq!(
+        status_of(&statuses_after_write, &incident_id, "grok"),
+        "equal"
+    );
+    assert_eq!(
+        status_of(&statuses_after_write, &review_id, "grok"),
+        "missing"
+    );
+    assert_eq!(
+        status_of(&statuses_after_write, &incident_id, "codex"),
+        "missing"
+    );
     assert_eq!(
         status_of(&statuses_after_write, &review_id, "antigravity"),
         "missing"
@@ -330,10 +338,7 @@ fn claude_import_exact_pairs_shared_visibility_edit_and_restore_end_to_end() {
     assert!(PathBuf::from(restore_receipt["backupLocation"].as_str().unwrap()).is_dir());
 
     // Source Claude packages, unselected Antigravity package, and library edits remain intact.
-    assert_eq!(
-        fs::read(review_src.join("SKILL.md")).unwrap(),
-        review_doc
-    );
+    assert_eq!(fs::read(review_src.join("SKILL.md")).unwrap(), review_doc);
     assert_eq!(
         fs::read(antigravity_untouched.join("SKILL.md")).unwrap(),
         untouched_bytes
@@ -393,7 +398,9 @@ fn fifth_agent_json_negative_guards_probe_invalidation_and_restore() {
         "---\nname: fifth-check\ndescription: Runtime fifth agent test.\n---\nBody.\n",
     )
     .unwrap();
-    let scan = session.execute("scan_import", json!({ "source": src })).unwrap();
+    let scan = session
+        .execute("scan_import", json!({ "source": src }))
+        .unwrap();
     let item_id = scan["items"][0]["itemId"].as_str().unwrap();
     let imp = session
         .execute(

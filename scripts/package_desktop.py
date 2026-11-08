@@ -123,6 +123,15 @@ def archive_macos_app_bundle(app_dir: Path, archive: Path) -> None:
         names = tf.getnames()
         if f"{app_dir.name}/Contents/Info.plist" not in names:
             raise ValueError("macos_app_archive_incomplete")
+        exec_members = [
+            m
+            for m in tf.getmembers()
+            if m.isfile()
+            and m.name.startswith(f"{app_dir.name}/Contents/MacOS/")
+            and (m.mode & 0o111) != 0
+        ]
+        if not exec_members:
+            raise ValueError("macos_app_archive_exec_bit_missing")
 
 
 def run_capture(cmd: list[str]) -> str:
@@ -157,7 +166,7 @@ def collect_host_baseline(platform_id: str, desktop_bin: Path, deb_path: Path | 
             if Path("/etc/os-release").is_file()
             else ""
         )
-        info["lddVersion"] = run_capture(["ldd", "--version"]).splitlines()[0]
+        info["lddVersion"] = (run_capture(["ldd", "--version"]).splitlines() or ["unavailable"])[0]
         if deb_path is not None:
             info["debDepends"] = run_capture(["dpkg-deb", "-f", str(deb_path), "Depends"])
     elif platform_id.startswith("macos-"):

@@ -114,7 +114,9 @@ jobs:
           pattern: staged-*
           path: downloaded-staged
       - name: Verify all 3-platform bundles and generate SHA-256 checksums without publishing
-        run: python3 scripts/package_desktop.py finalize --input downloaded-staged --output dist-bundles
+        run: |
+          python3 scripts/package_desktop.py finalize --input downloaded-staged --output dist-bundles
+          cat dist-bundles/BUILD-BASELINE.md
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: skill-hub-release-bundles
