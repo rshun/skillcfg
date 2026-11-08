@@ -86,6 +86,18 @@ impl App {
         state.profile_tokens.insert(revision.clone(), baseline);
         Ok(revision)
     }
+    pub fn read_agent_profile_document(&self, id: &AgentId) -> Result<(String, String), AppError> {
+        let baseline = self.profile_file(id)?;
+        let raw = baseline.raw.as_ref().ok_or(error("unknown_agent"))?;
+        parse_agent_profile(raw)?;
+        let document = String::from_utf8(raw.clone()).map_err(|_| error("invalid_profile"))?;
+        let document = skill_core::compatibility::safe_text(&document);
+        let revision = skill_io::disk::operation_id();
+        let mut state = self.state.borrow_mut();
+        state.profile_tokens.retain(|_, b| b.id != *id);
+        state.profile_tokens.insert(revision.clone(), baseline);
+        Ok((document, revision))
+    }
     fn approval_data(&self) -> Result<ApprovalData, AppError> {
         let path = self
             .source

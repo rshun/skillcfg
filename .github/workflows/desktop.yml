@@ -1,0 +1,154 @@
+name: Desktop and UI
+on:
+  push:
+    branches: ['dev/**']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web-lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Generate missing frontend lock in GitHub only
+        working-directory: apps/web
+        run: |
+          if [ ! -f package-lock.json ]; then npm install --package-lock-only --ignore-scripts; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: web-lock
+          path: apps/web/package-lock.json
+  web:
+    needs: web-lock
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: web-lock
+          path: apps/web
+      - run: npm --prefix apps/web ci
+      - run: npm --prefix apps/web test
+      - name: Build typed frontend
+        id: web-build
+        if: success() || failure()
+        run: npm --prefix apps/web run build
+      - name: Chinese system fonts for cloud screenshots
+        if: ${{ !cancelled() && steps.web-build.outcome == 'success' }}
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+      - name: Real Chrome workbench scenarios
+        if: ${{ !cancelled() && steps.web-build.outcome == 'success' }}
+        run: npm --prefix apps/web run test:gui
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: success() || failure()
+        with:
+          name: ui-review
+          path: apps/web/artifacts
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: success() || failure()
+        with:
+          name: web-dist
+          path: apps/web/dist
+          if-no-files-found: warn
+  desktop-lock:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.90.0'
+      - name: Resolve native lock only in GitHub
+        run: |
+          if [ ! -f apps/web/src-tauri/Cargo.lock ]; then cargo generate-lockfile --manifest-path apps/web/src-tauri/Cargo.toml; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: desktop-lock
+          path: apps/web/src-tauri/Cargo.lock
+  native-format:
+    needs: desktop-lock
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.90.0'
+          components: rustfmt
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: desktop-lock
+          path: apps/web/src-tauri
+      - name: Format native source in GitHub only
+        run: |
+          cargo fmt --all --manifest-path apps/web/src-tauri/Cargo.toml
+          git diff --binary -- crates apps/web/src-tauri > native-formatting.patch
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-formatting-patch
+          path: native-formatting.patch
+      - name: Check native formatting
+        run: git diff --exit-code -- crates apps/web/src-tauri
+  desktop:
+    needs: [desktop-lock, web, web-lock]
+    if: ${{ !cancelled() && needs.desktop-lock.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.90.0'
+          components: clippy, rustfmt
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Linux native prerequisites (GitHub runner only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: desktop-lock
+          path: apps/web/src-tauri
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: web-lock
+          path: apps/web
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: web-dist
+          path: apps/web/dist
+      - run: npm --prefix apps/web ci
+      - name: Generate native icon in GitHub
+        working-directory: apps/web
+        run: npx --no-install tauri icon ../../resources/desktop-icon.svg --output src-tauri/icons
+      - name: Native domain command regression tests
+        run: cargo test --manifest-path apps/web/src-tauri/Cargo.toml --locked -p skill-desktop
+      - name: Check native bridge
+        run: cargo check --manifest-path apps/web/src-tauri/Cargo.toml --locked -p skill-desktop
+      - name: Native Clippy
+        run: cargo clippy --manifest-path apps/web/src-tauri/Cargo.toml --all-targets --locked -- -D warnings
+      - name: Verify embedded production frontend
+        run: cargo test --manifest-path apps/web/src-tauri/Cargo.toml --release --locked --features custom-protocol -p skill-desktop --test release_assets
+      - name: Build desktop candidate in GitHub
+        run: cargo build --manifest-path apps/web/src-tauri/Cargo.toml --release --locked --features custom-protocol -p skill-desktop
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: desktop-candidate-${{ matrix.os }}-${{ runner.arch }}
+          path: apps/web/src-tauri/target/release/skill-hub-desktop${{ runner.os == 'Windows' && '.exe' || '' }}
+          if-no-files-found: error

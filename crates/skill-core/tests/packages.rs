@@ -119,11 +119,18 @@ fn rejects_windows_case_collision_and_reserved_names() {
         file("readme", vec![]),
         file("README", vec![]),
         file("NUL.txt", vec![]),
+        file("CON.txt", vec![]),
+        file("bad\x07name.txt", vec![]),
     ]);
-    let issues = validate_package(&package, Platform::Windows);
-    assert!(issues.iter().any(|i| i.code == "case_collision"));
-    assert!(issues.iter().any(|i| i.code == "invalid_path"));
-    assert!(validate_package(&tree(), Platform::Windows).is_empty());
+    for platform in [Platform::Windows, Platform::Linux, Platform::Macos] {
+        let issues = validate_package(&package, platform);
+        assert!(issues.iter().any(|i| i.code == "case_collision"));
+        assert_eq!(
+            issues.iter().filter(|i| i.code == "invalid_path").count(),
+            3
+        );
+        assert!(validate_package(&tree(), platform).is_empty());
+    }
 }
 
 #[test]

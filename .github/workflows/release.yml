@@ -1,0 +1,167 @@
+name: Release Bundles and Smoke
+
+on:
+  push:
+    branches: ['dev/**']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      publish_tag:
+        type: string
+        required: false
+        default: ''
+        description: Optional tag (e.g. v0.2.0) to create and publish on master only after explicit approval
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-bundles-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web-dist:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm --prefix apps/web ci
+      - run: npm --prefix apps/web run build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-web-dist
+          path: apps/web/dist
+          if-no-files-found: error
+          retention-days: 14
+
+  bundles:
+    needs: web-dist
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux-x64
+            bundles: deb,appimage
+            exe_ext: ''
+            python_cmd: python3
+          - os: windows-2022
+            platform: windows-x64
+            bundles: nsis,msi
+            exe_ext: .exe
+            python_cmd: python
+          - os: macos-15
+            platform: macos-arm64
+            bundles: app,dmg
+            exe_ext: ''
+            python_cmd: python3
+          - os: macos-15-intel
+            platform: macos-x64
+            bundles: app,dmg
+            exe_ext: ''
+            python_cmd: python3
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.90.0'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Linux native packaging and smoke prerequisites (GitHub runner only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf file xdg-utils xvfb
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-web-dist
+          path: apps/web/dist
+      - run: npm --prefix apps/web ci
+      - name: Generate native icon set in GitHub
+        working-directory: apps/web
+        run: npx --no-install tauri icon ../../resources/desktop-icon.svg --output src-tauri/icons
+      - name: Build native CLI release binary
+        run: cargo build --release --locked -p skill-cli
+      - name: Bundle native desktop installers
+        working-directory: apps/web
+        shell: bash
+        env:
+          CI: 'true'
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+          NO_STRIP: 'true'
+        run: |
+          CFG="$(cd src-tauri && (pwd -W 2>/dev/null || pwd))/tauri.bundle.json"
+          npx --no-install tauri build --features custom-protocol --config "$CFG" --bundles "${{ matrix.bundles }}" -- --locked
+      - name: Run native desktop launch smoke and zero-recompilation fifth-agent check
+        shell: bash
+        run: ${{ matrix.python_cmd }} scripts/smoke_desktop.py --desktop-bin "apps/web/src-tauri/target/release/skill-hub-desktop${{ matrix.exe_ext }}" --cli-bin "target/release/skill-hub${{ matrix.exe_ext }}" --platform "${{ matrix.platform }}" --report "smoke-report-${{ matrix.platform }}.json"
+      - name: Stage installers, portable bundle, CLI archive, and host baseline
+        shell: bash
+        run: ${{ matrix.python_cmd }} scripts/package_desktop.py stage --platform "${{ matrix.platform }}" --bundle-dir "apps/web/src-tauri/target/release/bundle" --desktop-bin "apps/web/src-tauri/target/release/skill-hub-desktop${{ matrix.exe_ext }}" --cli-bin "target/release/skill-hub${{ matrix.exe_ext }}" --smoke-report "smoke-report-${{ matrix.platform }}.json" --output "staged-${{ matrix.platform }}"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: staged-${{ matrix.platform }}
+          path: staged-${{ matrix.platform }}
+          if-no-files-found: error
+          retention-days: 14
+
+  release-summary:
+    needs: bundles
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: staged-*
+          path: downloaded-staged
+      - name: Verify all 3-platform bundles and generate SHA-256 checksums without publishing
+        run: |
+          python3 scripts/package_desktop.py finalize --input downloaded-staged --output dist-bundles
+          cat dist-bundles/BUILD-BASELINE.md
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: skill-hub-release-bundles
+          path: dist-bundles
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-release:
+    needs: release-summary
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && inputs.publish_tag != '' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: skill-hub-release-bundles
+          path: dist-bundles
+      - name: Verify manifest version, SHA-256 digests, and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH_TAG: ${{ inputs.publish_tag }}
+        run: |
+          EXPECTED_TAG="$(python3 -c 'import pathlib, sys; sys.path.insert(0, "scripts"); import package_desktop; print("v" + package_desktop.verified_version(pathlib.Path(".")))')"
+          if [ "$PUBLISH_TAG" != "$EXPECTED_TAG" ]; then
+            echo "Tag mismatch: publish_tag=$PUBLISH_TAG expected=$EXPECTED_TAG" >&2
+            exit 1
+          fi
+          NOTES_FILE="docs/releases/${PUBLISH_TAG}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            echo "Missing release notes: $NOTES_FILE" >&2
+            exit 1
+          fi
+          (cd dist-bundles && sha256sum -c SHA256SUMS.txt)
+          gh release create "$PUBLISH_TAG" \
+            dist-bundles/skill-hub-* \
+            dist-bundles/SHA256SUMS.txt \
+            dist-bundles/BUILD-BASELINE.md \
+            --target "$GITHUB_SHA" \
+            --title "Skill Hub $PUBLISH_TAG" \
+            --notes-file "$NOTES_FILE"

@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-execute"
+description = "Allow the strict domain command adapter in the local workbench."
+commands.allow = ["execute"]

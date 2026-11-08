@@ -9,6 +9,11 @@ use crate::{
 pub struct SafeFileDiff {
     pub path: String,
     pub binary: bool,
+    pub change: &'static str,
+    pub before_kind: Option<&'static str>,
+    pub after_kind: Option<&'static str>,
+    pub before_executable: Option<bool>,
+    pub after_executable: Option<bool>,
     pub before: Option<String>,
     pub after: Option<String>,
     pub before_bytes: usize,
@@ -49,6 +54,27 @@ pub fn redacted_plan_dto(plan: &DistributionPlan) -> SafePlanView {
                     paths
                         .into_iter()
                         .map(|path| {
+                            let old_kind = entry_kind(group.before.as_ref(), &path);
+                            let new_kind = entry_kind(Some(&group.after), &path);
+                            let change = match (old_kind, new_kind) {
+                                (None, Some(_)) => "added",
+                                (Some(_), None) => "removed",
+                                (
+                                    Some(EntryKind::File {
+                                        bytes: a,
+                                        unix_executable: x,
+                                    }),
+                                    Some(EntryKind::File {
+                                        bytes: b,
+                                        unix_executable: y,
+                                    }),
+                                ) if a == b && x != y => "permissions",
+                                (Some(EntryKind::Directory), Some(EntryKind::File { .. }))
+                                | (Some(EntryKind::File { .. }), Some(EntryKind::Directory)) => {
+                                    "typeChanged"
+                                }
+                                _ => "modified",
+                            };
                             let before = file_bytes(group.before.as_ref(), &path);
                             let after = file_bytes(Some(&group.after), &path);
                             let binary = [before, after]
@@ -76,6 +102,11 @@ pub fn redacted_plan_dto(plan: &DistributionPlan) -> SafePlanView {
                             SafeFileDiff {
                                 path: safe_text(&path),
                                 binary,
+                                change,
+                                before_kind: kind_name(old_kind),
+                                after_kind: kind_name(new_kind),
+                                before_executable: executable(old_kind),
+                                after_executable: executable(new_kind),
                                 before: old,
                                 after: new,
                                 before_bytes: before.map_or(0, <[u8]>::len),
@@ -113,4 +144,26 @@ fn file_bytes<'a>(tree: Option<&'a PackageTree>, path: &str) -> Option<&'a [u8]>
             None
         }
     })
+}
+
+fn entry_kind<'a>(tree: Option<&'a PackageTree>, path: &str) -> Option<&'a EntryKind> {
+    tree?
+        .entries
+        .iter()
+        .find(|e| e.relative_path == path)
+        .map(|e| &e.kind)
+}
+fn kind_name(kind: Option<&EntryKind>) -> Option<&'static str> {
+    kind.map(|k| match k {
+        EntryKind::File { .. } => "file",
+        EntryKind::Directory => "directory",
+    })
+}
+fn executable(kind: Option<&EntryKind>) -> Option<bool> {
+    match kind {
+        Some(EntryKind::File {
+            unix_executable, ..
+        }) => Some(*unix_executable),
+        _ => None,
+    }
 }

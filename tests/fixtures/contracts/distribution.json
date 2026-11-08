@@ -19,7 +19,12 @@
           "after": "---\nname: review\ndescription: Fixture.\n---\n",
           "beforeBytes": 0,
           "afterBytes": 48,
-          "truncated": false
+          "truncated": false,
+          "change": "added",
+          "beforeKind": null,
+          "afterKind": "file",
+          "beforeExecutable": null,
+          "afterExecutable": false
         }
       ],
       "reason": null
