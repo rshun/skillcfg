@@ -96,7 +96,14 @@ jobs:
           NO_STRIP: 'true'
         run: |
           CFG="$(cd src-tauri && (pwd -W 2>/dev/null || pwd))/tauri.bundle.json"
-          npx --no-install tauri build --features custom-protocol --config "$CFG" --bundles "${{ matrix.bundles }}" -- --locked
+          for attempt in 1 2 3 4 5; do
+            if npx --no-install tauri build --features custom-protocol --config "$CFG" --bundles "${{ matrix.bundles }}" -- --locked; then
+              exit 0
+            fi
+            echo "tauri bundle attempt $attempt failed (likely transient GitHub release CDN 504); retrying..."
+            sleep $((attempt * 4))
+          done
+          exit 1
       - name: Run native desktop launch smoke and zero-recompilation fifth-agent check
         shell: bash
         run: ${{ matrix.python_cmd }} scripts/smoke_desktop.py --desktop-bin "apps/web/src-tauri/target/release/skill-hub-desktop${{ matrix.exe_ext }}" --cli-bin "target/release/skill-hub${{ matrix.exe_ext }}" --platform "${{ matrix.platform }}" --report "smoke-report-${{ matrix.platform }}.json"
