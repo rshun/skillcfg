@@ -18,7 +18,7 @@ export async function mockCall<T>(command: string, request: Record<string, unkno
       value = { operationId: `demo-operation-${++serial}`, backupLocation: '/demo/backups', outcomes: [{ path: last.preview.groups[0].path, outcome: 'written', reason: null }] }; last = null;
     }
   } else switch (command) {
-    case 'app_info': value = { version: '0.2.0', platform: 'linux', mode: 'demo' }; break;
+    case 'app_info': value = { version: '0.3.0', platform: 'linux', mode: 'demo' }; break;
     case 'load_settings': value = structuredClone(settings); break;
     case 'save_settings': settings.settings = request.settings as SettingsView['settings']; settings.revision = `demo-settings-${++serial}`; value = structuredClone(settings); break;
     case 'load_library': value = { firstUse: false, records }; break;

@@ -11,7 +11,7 @@ on:
         type: string
         required: false
         default: ''
-        description: Optional tag (e.g. v0.2.0) to create and publish on master only after explicit approval
+        description: Optional tag (e.g. v0.3.0) to create and publish on master only after explicit approval
 
 permissions:
   contents: read

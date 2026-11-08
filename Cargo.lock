@@ -118,7 +118,7 @@ dependencies = [
 
 [[package]]
 name = "skill-app"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -130,7 +130,7 @@ dependencies = [
 
 [[package]]
 name = "skill-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "skill-core"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "skill-io"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",

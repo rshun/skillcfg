@@ -8,16 +8,16 @@
 
 ## 1. 三平台构建产物与运行基线
 
-所有二进制与安装包均由 `.github/workflows/ci.yml`、`.github/workflows/desktop.yml` 与 `.github/workflows/release.yml` 在 GitHub-hosted runners 上以 `--locked` 构建。`release.yml` 将桌面端与 CLI 发布候选统一汇总到 `skill-hub-release-bundles` 制品（内含 `SHA256SUMS.txt`、`BUILD-BASELINE.md` 及 `evidence/smoke-report-*.json`）；`ci.yml` 同时保留兼容命名的 `skill-hub-v0.2.0-<platform>.zip` CLI 归档供日常流水线快速验证。
+所有二进制与安装包均由 `.github/workflows/ci.yml`、`.github/workflows/desktop.yml` 与 `.github/workflows/release.yml` 在 GitHub-hosted runners 上以 `--locked` 构建。`release.yml` 将桌面端与 CLI 发布候选统一汇总到 `skill-hub-release-bundles` 制品（内含 `SHA256SUMS.txt`、`BUILD-BASELINE.md` 及 `evidence/smoke-report-*.json`）；`ci.yml` 同时保留兼容命名的 `skill-hub-v0.3.0-<platform>.zip` CLI 归档供日常流水线快速验证。
 
 | 平台与架构 | 桌面端产物 | CLI 产物 | 构建与原生运行 Runner | 最低 OS / 系统运行库基线与未签名边界 |
 |---|---|---|---|---|
-| Windows x64 | `skill-hub-desktop-v0.2.0-windows-x64-setup.exe`（NSIS）<br>`skill-hub-desktop-v0.2.0-windows-x64.msi`（MSI）<br>`skill-hub-desktop-v0.2.0-windows-x64-portable.zip` | `skill-hub-cli-v0.2.0-windows-x64.zip` | `windows-2022`（原生 x64 编译 + 原生进程启动） | Windows 10 1803+ 或 Windows 11 x64；需 Microsoft Edge WebView2 Runtime（Windows 11 与现代 Windows 10 已内置）。当前未配置 Authenticode 代码签名证书，首次运行可能出现 SmartScreen 提示。 |
-| macOS Apple Silicon（arm64） | `skill-hub-desktop-v0.2.0-macos-arm64.dmg`<br>`skill-hub-desktop-v0.2.0-macos-arm64.app.tar.gz` | `skill-hub-cli-v0.2.0-macos-arm64.tar.gz` | `macos-15`（原生 arm64 编译 + 原生 arm64 启动） | macOS 11+（Apple Silicon），使用系统 Cocoa 与 `WKWebView`；构建基线为 macOS 15 SDK。当前未配置 Apple Developer 签名与公证（Notarization），Gatekeeper 默认拦截从浏览器下载的未公证应用，需在“系统设置 -> 隐私与安全性”手动允许。 |
-| macOS Intel（x64） | `skill-hub-desktop-v0.2.0-macos-x64.dmg`<br>`skill-hub-desktop-v0.2.0-macos-x64.app.tar.gz` | `skill-hub-cli-v0.2.0-macos-x64.tar.gz` | `macos-15-intel`（原生 x64 编译 + 原生 x64 启动） | macOS 11+（Intel x86_64），使用系统 Cocoa 与 `WKWebView`；独立原生 x64 构建与运行验证，未以交叉编译替代运行验证。同样未签名/未公证。 |
-| Linux x64 | `skill-hub-desktop-v0.2.0-linux-x64.AppImage`<br>`skill-hub-desktop-v0.2.0-linux-x64.deb` | `skill-hub-cli-v0.2.0-linux-x64.tar.gz` | `ubuntu-24.04`（原生 x64 编译 + `xvfb-run` 启动） | **仅声明兼容 glibc >= 2.39 的 x86_64 发行版**（如 Ubuntu 24.04 LTS 及同代 Debian 系），不宣称兼容旧 glibc 发行版（如 Ubuntu 22.04 glibc 2.35 / Debian 12 glibc 2.36）。桌面运行需 `libwebkit2gtk-4.1-0`、`libgtk-3-0`、`libayatana-appindicator3-1`、`librsvg2-2` 及图形会话；无 FUSE 环境运行 AppImage 可传 `--appimage-extract-and-run` 或设置 `APPIMAGE_EXTRACT_AND_RUN=1`。 |
+| Windows x64 | `skill-hub-desktop-v0.3.0-windows-x64-setup.exe`（NSIS）<br>`skill-hub-desktop-v0.3.0-windows-x64.msi`（MSI）<br>`skill-hub-desktop-v0.3.0-windows-x64-portable.zip` | `skill-hub-cli-v0.3.0-windows-x64.zip` | `windows-2022`（原生 x64 编译 + 原生进程启动） | Windows 10 1803+ 或 Windows 11 x64；需 Microsoft Edge WebView2 Runtime（Windows 11 与现代 Windows 10 已内置）。当前未配置 Authenticode 代码签名证书，首次运行可能出现 SmartScreen 提示。 |
+| macOS Apple Silicon（arm64） | `skill-hub-desktop-v0.3.0-macos-arm64.dmg`<br>`skill-hub-desktop-v0.3.0-macos-arm64.app.tar.gz` | `skill-hub-cli-v0.3.0-macos-arm64.tar.gz` | `macos-15`（原生 arm64 编译 + 原生 arm64 启动） | macOS 11+（Apple Silicon），使用系统 Cocoa 与 `WKWebView`；构建基线为 macOS 15 SDK。当前未配置 Apple Developer 签名与公证（Notarization），Gatekeeper 默认拦截从浏览器下载的未公证应用，需在“系统设置 -> 隐私与安全性”手动允许。 |
+| macOS Intel（x64） | `skill-hub-desktop-v0.3.0-macos-x64.dmg`<br>`skill-hub-desktop-v0.3.0-macos-x64.app.tar.gz` | `skill-hub-cli-v0.3.0-macos-x64.tar.gz` | `macos-15-intel`（原生 x64 编译 + 原生 x64 启动） | macOS 11+（Intel x86_64），使用系统 Cocoa 与 `WKWebView`；独立原生 x64 构建与运行验证，未以交叉编译替代运行验证。同样未签名/未公证。 |
+| Linux x64 | `skill-hub-desktop-v0.3.0-linux-x64.AppImage`<br>`skill-hub-desktop-v0.3.0-linux-x64.deb` | `skill-hub-cli-v0.3.0-linux-x64.tar.gz` | `ubuntu-24.04`（原生 x64 编译 + `xvfb-run` 启动） | **仅声明兼容 glibc >= 2.39 的 x86_64 发行版**（如 Ubuntu 24.04 LTS 及同代 Debian 系），不宣称兼容旧 glibc 发行版（如 Ubuntu 22.04 glibc 2.35 / Debian 12 glibc 2.36）。桌面运行需 `libwebkit2gtk-4.1-0`、`libgtk-3-0`、`libayatana-appindicator3-1`、`librsvg2-2` 及图形会话；无 FUSE 环境运行 AppImage 可传 `--appimage-extract-and-run` 或设置 `APPIMAGE_EXTRACT_AND_RUN=1`。 |
 
-不支持的架构（如 Windows arm64、Linux arm64、RPM/Flatpak）不在 v0.2.0 承诺范围内。
+不支持的架构（如 Windows arm64、Linux arm64、RPM/Flatpak）不在 v0.3.0 承诺范围内。
 
 ---
 
@@ -54,7 +54,7 @@ shasum -a 256 -c SHA256SUMS.txt
 
 ```powershell
 # Windows PowerShell：查看单个产物 SHA-256 并与 SHA256SUMS.txt 比对
-Get-FileHash .\skill-hub-desktop-v0.2.0-windows-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\skill-hub-desktop-v0.3.0-windows-x64-portable.zip -Algorithm SHA256
 ```
 
 ### 3.2 创建空隔离目录并启动桌面端
