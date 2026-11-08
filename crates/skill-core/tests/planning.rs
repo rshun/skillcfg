@@ -253,15 +253,47 @@ fn structured_sensitive_fields_are_blocked_in_source_and_existing_target() {
 #[test]
 fn safe_diff_distinguishes_binary_removal_directory_and_permission_changes() {
     let mut p = package("p", "review", "safe");
-    p.tree.entries.push(TreeEntry { relative_path: "run.sh".into(), kind: EntryKind::File { bytes: b"same".to_vec(), unix_executable: true } });
-    p.tree.entries.push(TreeEntry { relative_path: "new-empty".into(), kind: EntryKind::Directory });
+    p.tree.entries.push(TreeEntry {
+        relative_path: "run.sh".into(),
+        kind: EntryKind::File {
+            bytes: b"same".to_vec(),
+            unix_executable: true,
+        },
+    });
+    p.tree.entries.push(TreeEntry {
+        relative_path: "new-empty".into(),
+        kind: EntryKind::Directory,
+    });
     let mut before = p.tree.clone();
     before.entries.retain(|e| e.relative_path != "new-empty");
-    before.entries.iter_mut().find(|e| e.relative_path == "run.sh").unwrap().kind = EntryKind::File { bytes: b"same".to_vec(), unix_executable: false };
-    before.entries.push(TreeEntry { relative_path: "old-image.bin".into(), kind: EntryKind::File { bytes: vec![0,255], unix_executable: false } });
-    before.entries.push(TreeEntry { relative_path: "old-empty".into(), kind: EntryKind::Directory });
+    before
+        .entries
+        .iter_mut()
+        .find(|e| e.relative_path == "run.sh")
+        .unwrap()
+        .kind = EntryKind::File {
+        bytes: b"same".to_vec(),
+        unix_executable: false,
+    };
+    before.entries.push(TreeEntry {
+        relative_path: "old-image.bin".into(),
+        kind: EntryKind::File {
+            bytes: vec![0, 255],
+            unix_executable: false,
+        },
+    });
+    before.entries.push(TreeEntry {
+        relative_path: "old-empty".into(),
+        kind: EntryKind::Directory,
+    });
     let key = TargetKey("one".into());
-    let plan = plan_distribution(std::slice::from_ref(&p), &[target(&p,"codex","one",Some(before))], &[pair(&p,"codex")], &BTreeMap::from([(key,ConflictDecision::Replace)])).unwrap();
+    let plan = plan_distribution(
+        std::slice::from_ref(&p),
+        &[target(&p, "codex", "one", Some(before))],
+        &[pair(&p, "codex")],
+        &BTreeMap::from([(key, ConflictDecision::Replace)]),
+    )
+    .unwrap();
     let dto = serde_json::to_value(redacted_plan_dto(&plan)).unwrap();
     let files = dto["groups"][0]["files"].as_array().unwrap();
     let item = |path: &str| files.iter().find(|f| f["path"] == path).unwrap();
