@@ -7,8 +7,8 @@
 | 设计归档 | 设计、计划、原型、审阅记录 | 已提交并推送 b0e19ce | 当前文档静态核对，历史快照原文保留；不是产品测试 |
 | 第一阶段 | Tasks 1–3：完整包、档案/快照/发现、分发计划 | 已验收 | 9e02750 / run 41289351712，6 个必需作业全部成功 |
 | 第二阶段 | Tasks 4–7：事务、库/导入、预览/恢复、CLI | 已实现、审阅修复及代码验收；归档提交继续 CI | 9df300c / run 41637391199，6 个必需作业全部成功 |
-| 第三阶段 | Tasks 8–11：界面与三平台桌面桥接 | 已实现、审阅修复及代码验收；归档提交继续 CI | 58d6cd6 / Stage CI 42443949755（7 项成功）、Desktop and UI 42443949757（8 项成功） |
-| 第四阶段 | Task 12：全流程、三平台产物与人工验证 | 未开始 | 无 |
+| 第三阶段 | Tasks 8–11：界面与三平台桌面桥接 | 已验收 | 3f2057e / Stage CI 42445134470（7 项成功）、Desktop and UI 42445134493（8 项成功） |
+| 第四阶段 | Task 12：全流程、三平台安装包与人工验收手册 | 已实现、全分支审阅修复及代码验收；归档提交继续三条 CI；真实 Agent 加载（`A14`）留待宿主机人工核对 | a441284 / Stage CI 42450350844（7 项成功）、Desktop and UI 42450350883（8 项成功）、Release Bundles and Smoke 42450350841（6 项成功） |
 
 阶段完成需要远端 commit、匹配最终 SHA 的必需 CI 绿灯与独立审阅。未开始、等待 CI 或失败不能写作完成。
 
@@ -85,4 +85,24 @@
 - 代码验收：58d6cd6c07391f13f475ab0096b6811013f3ed8f。
   - [Stage CI run 42443949755](https://github.com/rshun/skillcfg/actions/runs/42443949755)：7 个作业全部成功（Linux 113、macOS arm64 与 Intel 各 112、Windows 107 项测试，Clippy、格式、锁文件及 CLI 制品通过）。
   - [Desktop and UI run 42443949757](https://github.com/rshun/skillcfg/actions/runs/42443949757)：8 个作业全部成功（前端 16 项单元/契约测试、真实 Chrome 32 项交互场景与响应式/暗色截图、原生格式检查、四个平台各 6 项原生命令契约与 1 项内嵌生产资源测试、Clippy 及四个 `desktop-candidate-*` 制品上传）。
-- 保留 dev/skill-hub 与所有现场，不合并主干、不自动发布、不删除任何备份或临时记录。归档提交继续运行同一双流水线，最终交付核对远端 headSha 与最新成功 CI 一致。第四阶段 Task 12（正式安装包、平台实际窗口/目录选择器人工交互与真实 Agent 加载核对）尚未开始。
+- 保留 dev/skill-hub 与所有现场，不合并主干、不自动发布、不删除任何备份或临时记录。归档提交 `3f2057e` 已通过 Stage CI `42445134470`（7/7）与 Desktop and UI `42445134493`（8/8），随后进入第四阶段 Task 12。
+
+## 第四阶段执行记录与验收（Task 12）
+
+用户授权实现第四阶段（基线 `3f2057e`），继续严格遵守“零新增依赖、零删除文件、不在本机编译/测试、不触碰 `master`、不自动打标签或发布 Release”红线。
+
+- 新增端到端与回归验证：
+  - `tests/fixtures/agents/custom.fifth.json`：标准第五个 Agent 运行时档案（含 `user-native`、`project-native`、`.agents/skills` 兼容读取根及 JSON 布尔探针 `.fifth/config.json`）。
+  - `apps/web/src-tauri/tests/end_to_end.rs`：单隔离 `HOME` 真实端到端闭环（导入 Claude 多包 → 保存库 → 精确配对 Codex/Grok 且断言不扩展为 4 项 → 预览与共享可见性按物理根独立断言 → 应用并核对 UTF-8 中文/未知 frontmatter/CRLF/二进制字节/Unix 执行位 → 编辑库及改名但不自动应用 → 预览并确认恢复至加载目录干净状态），以及第五个 Agent 非法档案、未授权拦截、探针翻转使旧预览失效与恢复闭环。
+  - `crates/skill-cli/tests/commands.rs`：CLI 端到端闭环、跨平台 `CON.txt` 保留名拦截、Unix 包内符号链接拦截、更新库记录不改动已分发目录，以及第五个 Agent 负例与恢复。
+  - `apps/web/tests/gui.test.mjs`：补齐真实 Chrome 200% 缩放（`512x450` CSS 视口、`deviceScaleFactor: 2`）遍历四页与全部五个任务弹窗无横向溢出，产出 `library-zoom-200.png`、`agents-zoom-200.png`、`preview-zoom-200.png` 与 `gui-interaction-log.json`，下载后已人工核对中文字体清晰、弹窗头部/底栏固定正常。
+- 三平台四架构安装包与启动/零重编译验证：
+  - 新增 `apps/web/src-tauri/tauri.bundle.json`、`scripts/package_desktop.py`、`scripts/smoke_desktop.py` 与 `.github/workflows/release.yml`，在 `ubuntu-24.04`、`windows-2022`、`macos-15`（arm64）、`macos-15-intel`（x64）原生构建并校验全部 13 个桌面/CLI 安装包与免安装归档，执行原生桌面启动 smoke（Linux 配合 `xvfb-run`）以及对同一已编译二进制零重编译接入 `custom.fifth.json`（含二进制运行前后 SHA-256 完全相等断言）。
+- 全分支独立审阅与 RED→GREEN 闭环：
+  - `508c0bd` 在 `Stage CI run 42446908336` 实际复现 `C1` 红灯（`package.rs` 的 `valid_relative_path` 在非 Windows 平台提前返回 `true`，导致 Linux/macOS 未拦截 `CON.txt` 等不可移植保留名与控制字符），同时独立只读审阅对照 `A1–A20` 输出 `C1`、`I1–I3`、`M1–M4`（详见 [第四阶段审阅记录](reviews/stage-four-review.md)）。
+  - `eb1cea5` 完成 `C1`、`I2`、`M2–M4` 修复并使 `Stage CI`（`42448143220`）与 `Release Bundles and Smoke`（`42448143228`）转绿；`a441284` 消除 `end_to_end.rs` 在 Windows 下的条件导入告警。
+- 代码验收：`a44128460d9e54b3ae246bb4c021f4a061579491`（三条工作流共 21 个作业 100% 成功）：
+  - [Stage CI run 42450350844](https://github.com/rshun/skillcfg/actions/runs/42450350844)：7 个作业全部成功（Linux 114、macOS arm64 与 Intel 各 113、Windows 108 项测试）。
+  - [Desktop and UI run 42450350883](https://github.com/rshun/skillcfg/actions/runs/42450350883)：8 个作业全部成功（前端 16 项单元/契约测试、真实 Chrome 34 项测试〔33 个交互子场景〕、四平台各 9 项原生桌面测试与候选构建）。
+  - [Release Bundles and Smoke run 42450350841](https://github.com/rshun/skillcfg/actions/runs/42450350841)：6 个作业全部成功（汇总上传 `skill-hub-release-bundles`，内含 13 个安装包/归档、`SHA256SUMS.txt`、`BUILD-BASELINE.md` 与四份平台运行报告）。
+- 诚实边界：系统原生目录对话框人工点击、安装向导图形点击以及四个真实外部 Agent 的实际发现/加载（`A14`）须由操作人员在宿主机按 [人工验收手册](MANUAL-VALIDATION.md) 执行并填写记录表，不以 CI 通过代替真实 Agent 加载证明。阶段归档提交将继续在 GitHub 跑完上述全部三条流水线并核对最终 HEAD SHA 全绿。

@@ -8,7 +8,7 @@
 
 ## 1. 三平台构建产物与运行基线
 
-所有二进制与安装包均由 `.github/workflows/ci.yml`、`.github/workflows/desktop.yml` 与 `.github/workflows/release.yml` 在 GitHub-hosted runners 上以 `--locked` 构建，并汇总到 `skill-hub-release-bundles` 制品（内含 `SHA256SUMS.txt`、`BUILD-BASELINE.md` 及 `evidence/` 运行报告）。
+所有二进制与安装包均由 `.github/workflows/ci.yml`、`.github/workflows/desktop.yml` 与 `.github/workflows/release.yml` 在 GitHub-hosted runners 上以 `--locked` 构建。`release.yml` 将桌面端与 CLI 发布候选统一汇总到 `skill-hub-release-bundles` 制品（内含 `SHA256SUMS.txt`、`BUILD-BASELINE.md` 及 `evidence/smoke-report-*.json`）；`ci.yml` 同时保留第二阶段兼容命名的 `skill-hub-v0.1.0-<platform>.zip` CLI 归档供日常流水线快速验证。
 
 | 平台与架构 | 桌面端产物 | CLI 产物 | 构建与原生运行 Runner | 最低 OS / 系统运行库基线与未签名边界 |
 |---|---|---|---|---|
@@ -32,7 +32,7 @@
 | 重命名后历史恢复定位、真实子进程崩溃残留锁恢复、备份与归档不删除 | **真实平台自动执行** | Linux x64、Windows x64、macOS arm64、macOS x64 | `crates/skill-io`、`crates/skill-app`、`end_to_end.rs`（Windows 额外实测共享句柄占用回退；Linux 额外实测 `/tmp` 与 `/dev/shm` 跨设备中央备份） |
 | Windows 保留名（`CON`/`NUL` 等）、UTF-8 中文、超 260 字符长路径、二进制字节、CRLF 保留 | **真实平台自动执行** | 四平台全跑（含 `windows-2022` 原生 NTFS 实测） | `crates/skill-core`、`crates/skill-io`、`crates/skill-cli/tests/commands.rs`、`end_to_end.rs` |
 | Unix 执行位（`0755`）与私有权限（`0700`/`0600`） | **真实平台自动执行（仅 Unix）** | Linux x64、macOS arm64、macOS x64（Windows 按平台语义不声明 POSIX 执行位） | `crates/skill-io`、`crates/skill-cli/tests/commands.rs`、`end_to_end.rs` |
-| 同一已编译二进制零重编译接入第五个 Agent（含非法档案、未授权、共享根、探针变更失效、恢复） | **真实平台自动执行** | Linux x64、Windows x64、macOS arm64、macOS x64 | `scripts/smoke_desktop.py` 对比运行前后 `skill-hub` 与 `skill-hub-desktop` 的 SHA-256 完全一致，并产出 `smoke-report-*.json` |
+| 同一已编译二进制零重编译接入第五个 Agent（含非法档案、未授权、共享根、探针变更、桌面启动与恢复） | **真实平台自动执行** | Linux x64、Windows x64、macOS arm64、macOS x64 | `scripts/smoke_desktop.py` 在已构建产物上完成 CLI 全流程、探针布尔值翻转（`configEnabled -> configDisabled`）及已启用第五档案的原生桌面启动，前后比对 `skill-hub` 与 `skill-hub-desktop` 的 SHA-256 完全一致；内存态预览因探针变化自动失效由 `end_to_end.rs` 四平台实测 |
 | 原生桌面可执行程序启动、动态库链接与只读零落盘启动（`--home`） | **真实平台进程执行（Linux 配合 `xvfb-run` 虚拟显示）** | Windows x64、macOS arm64、macOS x64 原生图形子系统；Linux x64 使用 `xvfb-run` | `scripts/smoke_desktop.py` 验证进程存活、非法相对路径退出码 `1`、启动不创建 `.skill-hub` |
 | 四页导航、全部任务弹窗、暗色主题、320–1024px 宽度、键盘 `Escape` 焦点回收、200% 缩放 | **真实 Chrome 浏览器自动化（受控内存 IPC fixture）** | Ubuntu 24.04（Google Chrome CDP） | `apps/web/tests/gui.test.mjs` 产出 PNG 截图（含 `library-zoom-200.png`、`agents-zoom-200.png`、`preview-zoom-200.png`）与 `gui-interaction-log.json` |
 | 原生目录选择器取消语义与非法路径边界 | **桥接契约测试 + 待宿主机人工点击** | 四平台自动跑 `DirectoryPicker` 取消/校验单测；真实 OS 文件对话框需宿主机人工点击 | `apps/web/src-tauri/tests/commands.rs` 验证取消不改上下文；真实系统窗口点击列于第 3 节人工清单 |
