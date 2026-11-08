@@ -8,9 +8,9 @@ import { Icon, type IconName } from './Icon';
 export type Page = 'library' | 'agents' | 'history' | 'settings';
 
 const PRIMARY_NAV: { id: Page; title: string; icon: IconName; hint: string }[] = [
-  { id: 'library', title: '我的 Skills', icon: 'library', hint: '管理完整包与分发' },
-  { id: 'agents', title: 'Agents', icon: 'agents', hint: '查看目录与接入档案' },
-  { id: 'history', title: '变更历史', icon: 'history', hint: '逐组回执与备份恢复' },
+  { id: 'library', title: '我的 Skills', icon: 'library', hint: '完整包与分发' },
+  { id: 'agents', title: 'Agents', icon: 'agents', hint: '目录与接入档案' },
+  { id: 'history', title: '变更历史', icon: 'history', hint: '回执与备份恢复' },
 ];
 
 export function AppShell({

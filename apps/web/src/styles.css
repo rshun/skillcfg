@@ -526,7 +526,16 @@ pre {
   font-weight: 600;
 }
 .nav-item .nav-text { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.35; }
-.nav-item small { display: block; font-size: 11.5px; font-weight: 400; margin-top: 3px; color: var(--text-3); }
+.nav-item small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  margin-top: 3px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .nav-item.active small,
 .nav-item[aria-current="page"] small { color: var(--accent); opacity: 0.8; }
 .nav-item .count {
@@ -1915,6 +1924,7 @@ table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
 }
 
 @media (max-width: 940px) {
+  .sidebar { width: 176px; flex-basis: 176px; padding-left: 8px; padding-right: 8px; }
   .breadcrumb { display: none; }
   .quiet-caption { display: none; }
   .library-workspace.with-inspector { grid-template-columns: minmax(0, 1fr); }
@@ -1923,9 +1933,10 @@ table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
   .agent-list .section-caption { grid-column: 1 / -1; margin-bottom: 2px; }
   .agent-choice { background: var(--surface); border-color: var(--line); margin-bottom: 0; }
   .agent-empty { min-height: 240px; }
+  .settings-accent-grid { grid-template-columns: 1fr 1fr; }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 760px) {
   .sidebar {
     width: 64px;
     flex-basis: 64px;
@@ -1952,7 +1963,6 @@ table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
   .content { padding: 18px 16px; }
   .selection-bar { margin: 0 16px 12px; padding: 10px 14px; gap: 10px; flex-wrap: wrap; }
   .selection-mark { display: none; }
-  .settings-accent-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 650px) {
@@ -1972,6 +1982,14 @@ table.matrix { border-collapse: collapse; width: 100%; font-size: 12px; }
     border-bottom: 1px solid var(--line-soft);
   }
   .library-table tr:last-child { border-bottom: 0; }
+  .library-table tr.focused {
+    background: var(--row-focus);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .library-table tr.focused td {
+    background: transparent;
+    box-shadow: none !important;
+  }
   .library-table td { display: block; border: 0; padding: 0; min-width: 0; }
   .library-table td:nth-child(2) { display: none; }
   .library-table td:nth-child(3) { grid-column: 1; padding-left: 52px; }
