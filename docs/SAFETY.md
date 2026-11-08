@@ -49,3 +49,7 @@ Tauri 仅暴露固定 `execute` 命令，内部按严格请求结构分派到应
 窗口身份取自 Tauri 的可信 Window，前端不能指定其他窗口标签。每窗口独立 App/PreviewStore，后台线程执行阻塞 IO；关闭窗口移除其会话。Capabilities 只允许主窗口使用这个固定命令，不开放任意文件系统或 shell 能力。目录选择由原生对话框返回，不执行包内脚本。
 
 公开 JSON 只传安全 DTO，错误只传静态错误码，不输出原始快照或用户文档的诊断日志。桥接限制 JSON 请求大小 32 MiB，以容纳原文在 JSON 中的转义；应用层仍执行原有文档、档案、包和预算上限。浏览器演示始终有醒目标记，桌面调用失败不降级为演示成功。
+
+## 发布包与人工验收边界
+
+GitHub Actions 产出的 Windows（NSIS/MSI/免安装 ZIP）、macOS arm64/x64（DMG/`.app.tar.gz`）、Linux x64（AppImage/`.deb`）及对应 CLI 归档均附带 `SHA256SUMS.txt` 与构建基线记录，默认仅作为工作流制品保留，不自动打标签、不自动创建 GitHub Release、不自动覆盖本机真实 Agent 配置。安装包回退不能替代数据恢复；撤回已分发的 Skill 仍须通过“变更历史”或 `skill-hub restore` 预览并显式确认。真实外部 Agent 是否发现并加载已分发的 Skill 须按 [人工验收手册](MANUAL-VALIDATION.md) 独立核对记录。

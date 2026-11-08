@@ -41,7 +41,7 @@ def main():
                 "解压后运行 skill-hub --help（Windows 使用 skill-hub.exe）。\n"
                 "Linux/macOS 如需执行权限，可执行 chmod +x ./skill-hub。\n"
                 "首次建议使用 --home 指向临时目录；详见 CLI.md 与 SAFETY.md。\n"
-                "每次预览后手动应用，不自动同步。桌面界面尚未交付。\n"
+                "每次预览后手动应用，不自动同步；桌面安装包与手工验收清单见同版本发行制品。\n"
             ).encode("utf-8"),
         }
         archive = args.output / f"skill-hub-v{version}-{platform}.zip"

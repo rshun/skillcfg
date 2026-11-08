@@ -1,0 +1,11 @@
+{
+  "build": {
+    "beforeBuildCommand": ""
+  },
+  "bundle": {
+    "active": true,
+    "category": "DeveloperTool",
+    "shortDescription": "Local Skill management and manual cross-Agent distribution",
+    "longDescription": "Local Skill management and manual cross-Agent distribution workbench for Codex, Claude Code, Antigravity, Grok Build, and JSON-configured Agents."
+  }
+}

@@ -197,4 +197,48 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
     await p.call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 }); await p.call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
     await until(() => p.evaluate('!document.querySelector("dialog[open]")'), 'dialog close'); assert.equal(await p.evaluate('document.activeElement.dataset.action'), 'edit-skill');
   });
+  await t.test('200% zoom across four pages and all task dialogs without horizontal overflow', async () => {
+    const p = await page('window.fifth=true;window.customReader=true'); await mkdir('artifacts', { recursive: true }); await p.evaluate('document.fonts.ready');
+    // Real Chromium 200% browser zoom on a 1024x900 desktop window -> 512x450 CSS viewport at deviceScaleFactor 2.
+    await p.call('Emulation.setDeviceMetricsOverride', { width: 512, height: 450, deviceScaleFactor: 2, mobile: false });
+    const shotLib = await p.call('Page.captureScreenshot', { format: 'png' }); await writeFile('artifacts/library-zoom-200.png', Buffer.from(shotLib.data, 'base64'));
+    assert.ok(await p.evaluate('document.documentElement.scrollWidth<=window.innerWidth'), 'library 200% zoom overflow');
+    for (const nav of ['agents', 'history', 'settings']) {
+      await p.click(`[data-page="${nav}"]`); await until(() => p.evaluate('!document.querySelector(".loading")'), `${nav} 200% zoom`);
+      assert.ok(await p.evaluate('document.documentElement.scrollWidth<=window.innerWidth'), `${nav} 200% zoom overflow`);
+      if (nav === 'agents') {
+        const shotAgents = await p.call('Page.captureScreenshot', { format: 'png' }); await writeFile('artifacts/agents-zoom-200.png', Buffer.from(shotAgents.data, 'base64'));
+      }
+    }
+    await p.click('[data-page="library"]');
+    for (const action of ['import-local', 'edit-skill']) {
+      await p.click(`[data-action="${action}"]`); await until(() => p.evaluate('!!document.querySelector("dialog[open]")'), `${action} dialog at 200%`);
+      assert.ok(await p.evaluate('document.querySelector("dialog[open]").getBoundingClientRect().width<=window.innerWidth'), `${action} dialog fits viewport`);
+      await p.click('dialog button[aria-label="关闭"]'); await until(() => p.evaluate('!document.querySelector("dialog[open]")'), `${action} closed`);
+    }
+    await p.click('[data-target="codex"]'); await p.click('[data-action="preview-distribution"]');
+    await until(() => p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'), 'preview dialog at 200%');
+    assert.ok(await p.evaluate('document.querySelector("dialog[open]").getBoundingClientRect().width<=window.innerWidth'), 'preview dialog fits viewport');
+    const shotPreview = await p.call('Page.captureScreenshot', { format: 'png' }); await writeFile('artifacts/preview-zoom-200.png', Buffer.from(shotPreview.data, 'base64'));
+    await p.click('dialog button[aria-label="关闭"]'); await until(() => p.evaluate('!document.querySelector("dialog[open]")'), 'preview closed');
+    await p.click('[data-page="agents"]'); await p.click('[data-action="add-profile"]');
+    await until(() => p.evaluate('!!document.querySelector("dialog[open]")'), 'add-profile dialog at 200%');
+    assert.ok(await p.evaluate('document.querySelector("dialog[open]").getBoundingClientRect().width<=window.innerWidth'), 'add-profile dialog fits viewport');
+    await p.click('dialog button[aria-label="关闭"]'); await until(() => p.evaluate('!document.querySelector("dialog[open]")'), 'add-profile closed');
+    await p.click('[data-page="history"]'); await p.click('[data-action="preview-restore"]');
+    await until(() => p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'), 'restore dialog at 200%');
+    assert.ok(await p.evaluate('document.querySelector("dialog[open]").getBoundingClientRect().width<=window.innerWidth'), 'restore dialog fits viewport');
+    await p.click('dialog button[aria-label="关闭"]'); await until(() => p.evaluate('!document.querySelector("dialog[open]")'), 'restore closed');
+    const calls = await p.evaluate('window.calls.map(([c]) => c)');
+    await writeFile('artifacts/gui-interaction-log.json', JSON.stringify({
+      suite: 'approved workbench browser interactions',
+      pagesVerified: ['library', 'agents', 'history', 'settings'],
+      dialogsVerified: ['import-local', 'edit-skill', 'preview-distribution', 'add-profile', 'preview-restore'],
+      widthsVerified: [1024, 850, 650, 390, 320],
+      zoom200Verified: { cssViewport: '512x450', deviceScaleFactor: 2 },
+      darkThemeVerified: true,
+      escapeFocusReturnVerified: true,
+      zoomSessionCommandTrace: calls,
+    }, null, 2));
+  });
 });

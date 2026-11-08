@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "id": "custom.fifth",
+  "displayName": "Fifth Agent",
+  "packageFormat": "skill-md-v1",
+  "variants": [
+    "default"
+  ],
+  "defaultVariant": "default",
+  "roots": [
+    {
+      "rootId": "user-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".fifth/skills",
+      "discovery": "children",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "project-native",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "project",
+      "base": "project",
+      "relative": ".fifth/skills",
+      "discovery": "ancestors-to-repo",
+      "role": "native",
+      "read": true,
+      "write": true,
+      "priority": 100
+    },
+    {
+      "rootId": "user-shared",
+      "platforms": [
+        "windows",
+        "macos",
+        "linux"
+      ],
+      "scope": "user",
+      "base": "home",
+      "relative": ".agents/skills",
+      "discovery": "children",
+      "role": "compatibility",
+      "read": true,
+      "write": false,
+      "priority": 90,
+      "readEvidence": {
+        "kind": "bool-config-v1",
+        "probeId": "shared-compat"
+      }
+    }
+  ],
+  "probes": [
+    {
+      "probeId": "shared-compat",
+      "base": "home",
+      "relative": ".fifth/config.json",
+      "format": "json",
+      "keyPath": [
+        "compat",
+        "shared",
+        "skills"
+      ],
+      "expected": true,
+      "onMissing": false
+    }
+  ],
+  "binaryNames": [
+    "fifth-agent"
+  ]
+}
