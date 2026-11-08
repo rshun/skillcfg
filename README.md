@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-第一阶段核心和只读发现已验收。第二阶段的完整包备份、库管理、手动预览/应用/恢复及 CLI 已通过独立审阅修复与四平台 GitHub 验收。第三阶段正在完成桌面工作台与原生桥接验收，安装包与实际 Agent 加载属于第四阶段。
+第一阶段核心和只读发现已验收。第二阶段的完整包备份、库管理、手动预览/应用/恢复及 CLI 已通过独立审阅修复与四平台 GitHub 验收。第三阶段的桌面工作台与 Tauri 原生桥接已完成独立审阅修复与双流水线四平台验收；安装包与实际 Agent 加载属于第四阶段。
 
 - [完整设计](docs/superpowers/specs/2026-11-01-skill-hub-design.md)
 - [实施计划](docs/superpowers/plans/2026-11-01-skill-hub.md)
@@ -32,4 +32,10 @@
 
 代码验收提交 9df300c，[GitHub run 41637391199](https://github.com/rshun/skillcfg/actions/runs/41637391199) 的 6 个必需作业全部通过。Linux 109、macOS 两个架构各 108、Windows 103 项测试；平台专属用例按实际系统运行。CLI 制品可从工作流 Artifacts 获取，保留 14 天。归档提交仍由同一工作流检查；[开发分支最新 CI](https://github.com/rshun/skillcfg/actions/workflows/ci.yml?query=branch%3Adev%2Fskill-hub) 应与当前提交匹配。
 
-[第二阶段审阅与修复记录](docs/reviews/stage-two-review.md) 包含六类回归。桌面界面、安装包和真实 Agent 加载验收仍属于后续阶段；当前 CLI 不代表 Agent 已加载 Skill。
+[第二阶段审阅与修复记录](docs/reviews/stage-two-review.md) 包含六类回归。
+
+## 第三阶段验收
+
+代码验收提交 58d6cd6，[Stage CI run 42443949755](https://github.com/rshun/skillcfg/actions/runs/42443949755) 的 7 个作业与 [Desktop and UI run 42443949757](https://github.com/rshun/skillcfg/actions/runs/42443949757) 的 8 个作业全部通过。核心矩阵 Linux 113、macOS 两个架构各 112、Windows 107 项测试；前端 16 项单元/契约测试与真实 Chrome 32 项交互场景通过；四个平台原生 Tauri 桥接测试、内嵌生产前端资源校验与桌面候选构建通过。归档提交继续由同一双流水线检查；[桌面工作流最新 CI](https://github.com/rshun/skillcfg/actions/workflows/desktop.yml?query=branch%3Adev%2Fskill-hub) 应与当前提交匹配。
+
+[第三阶段审阅与修复记录](docs/reviews/stage-three-review.md) 包含八类回归。正式安装包、平台实际窗口/目录选择器人工交互及真实 Agent 加载验收属于第四阶段；当前候选构建不代表已完成安装包或真实 Agent 加载验证。
