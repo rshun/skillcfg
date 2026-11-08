@@ -170,6 +170,30 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
   await t.test('profile enabled toggle is an unsaved change',async()=>{
     const p=await page();await p.click('[data-page="agents"]');await p.click('[data-action="add-profile"]');await p.click('dialog .switch-label input');await p.click('dialog button[aria-label="关闭"]');await p.click('[data-action="discard-cancel"]');assert.ok(await p.evaluate('!!document.querySelector("[data-action=preview-profile]")'));
   });
+  await t.test('palette accent switcher, sidebar library switch and batch matrix preserve manual apply',async()=>{
+    const p=await page();
+    assert.equal(await p.evaluate('document.documentElement.dataset.accent'),'ocean');
+    await p.click('[aria-label="切换主题配色"]');
+    assert.equal(await p.evaluate('!!document.querySelector("dialog[open]")'),false);
+    await p.click('[data-accent-choice="emerald"]');
+    assert.equal(await p.evaluate('document.documentElement.dataset.accent'),'emerald');
+    await p.click('[data-accent-choice="ocean"]');
+    assert.equal(await p.evaluate('document.documentElement.dataset.accent'),'ocean');
+    await p.click('[data-action="switch-library"]');
+    await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-switch-library]")'),'switch library dialog');
+    await p.fill('input[aria-label="配置库绝对目录"]','/fixture/switched-library');
+    await p.click('[data-action="confirm-switch-library"]');
+    await until(()=>p.evaluate('!document.querySelector("dialog[open]")'),'library switched');
+    assert.ok((await p.text()).includes('switched-library'));
+    assert.equal(await p.evaluate('window.calls.some(([c])=>c==="commit_distribution")'),false);
+    await p.click('[data-action="open-matrix"]');
+    await until(()=>p.evaluate('!!document.querySelector("[data-matrix-col=codex]")'),'matrix dialog');
+    await p.click('[data-matrix-col="codex"]');
+    await p.click('[data-action="matrix-preview"]');
+    await until(()=>p.evaluate('!!document.querySelector("[data-action=confirm-preview]")'),'matrix distribution preview');
+    assert.equal(await p.evaluate('window.calls.filter(([c])=>c==="preview_distribution").at(-1)[1].selection.length'),3);
+    assert.equal(await p.evaluate('window.calls.some(([c])=>c==="commit_distribution")'),false);
+  });
   await t.test('four page and task screenshots at desktop and narrow widths',async()=>{
     const p=await page();await mkdir('artifacts',{recursive:true});await p.evaluate('document.fonts.ready');
     for(const width of [1024,320]){
@@ -211,7 +235,7 @@ test('approved workbench browser interactions', { timeout: 240000 }, async t => 
       }
     }
     await p.click('[data-page="library"]');
-    for (const action of ['import-local', 'edit-skill']) {
+    for (const action of ['import-local', 'edit-skill', 'switch-library', 'open-matrix']) {
       await p.click(`[data-action="${action}"]`); await until(() => p.evaluate('!!document.querySelector("dialog[open]")'), `${action} dialog at 200%`);
       assert.ok(await p.evaluate('document.querySelector("dialog[open]").getBoundingClientRect().width<=window.innerWidth'), `${action} dialog fits viewport`);
       await p.click('dialog button[aria-label="关闭"]'); await until(() => p.evaluate('!document.querySelector("dialog[open]")'), `${action} closed`);
