@@ -1,2 +1,9 @@
 import { label } from '../messages';
-export function Status({state}:{state:string}) { return <span className={`status status-${state}`}>{label(state)}</span>; }
+
+export function Status({ state, pill = false }: { state: string; pill?: boolean }) {
+  return (
+    <span className={`${pill ? 'pill-status ' : ''}status status-${state}`}>
+      {label(state)}
+    </span>
+  );
+}

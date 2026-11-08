@@ -11,7 +11,7 @@ on:
         type: string
         required: false
         default: ''
-        description: Optional tag (e.g. v0.2.0) to create and publish on master only after explicit approval
+        description: Optional tag (e.g. v0.3.0) to create and publish on master only after explicit approval
 
 permissions:
   contents: read
@@ -87,6 +87,80 @@ jobs:
         run: npx --no-install tauri icon ../../resources/desktop-icon.svg --output src-tauri/icons
       - name: Build native CLI release binary
         run: cargo build --release --locked -p skill-cli
+      - name: Pre-warm Tauri bundler tools via GitHub API
+        if: runner.os == 'Linux' || runner.os == 'Windows'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ${{ matrix.python_cmd }} - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, tempfile, time, zipfile
+
+          def api_download_asset(repo: str, tag: str, asset_name: str, dest: pathlib.Path) -> None:
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              for attempt in range(1, 6):
+                  try:
+                      meta_raw = subprocess.check_output(
+                          ['gh', 'api', f'repos/{repo}/releases/tags/{tag}'],
+                          text=True,
+                      )
+                      assets = json.loads(meta_raw).get('assets', [])
+                      match = next((a for a in assets if a.get('name') == asset_name), None)
+                      if not match:
+                          raise RuntimeError(f'Asset {asset_name} not found in {repo}@{tag}')
+                      part = dest.with_name(dest.name + '.part')
+                      with part.open('wb') as fh:
+                          subprocess.run(
+                              ['gh', 'api', '-H', 'Accept: application/octet-stream', f"repos/{repo}/releases/assets/{match['id']}"],
+                              stdout=fh,
+                              check=True,
+                          )
+                      if part.stat().st_size == match['size'] and part.stat().st_size > 0:
+                          part.replace(dest)
+                          return
+                  except Exception as exc:
+                      print(f'attempt {attempt} for {repo}@{tag}/{asset_name} failed: {exc}', flush=True)
+                  time.sleep(attempt * 3)
+              raise SystemExit(f'Failed to pre-warm {repo}@{tag}/{asset_name}')
+
+          if os.name == 'nt':
+              tools = pathlib.Path(os.environ['LOCALAPPDATA']) / 'tauri'
+              tools.mkdir(parents=True, exist_ok=True)
+              with tempfile.TemporaryDirectory() as tmp:
+                  tmp_dir = pathlib.Path(tmp)
+                  if not (tools / 'NSIS' / 'NSIS.exe').is_file():
+                      nsis_zip = tmp_dir / 'nsis-3.13.zip'
+                      api_download_asset('tauri-apps/binary-releases', 'nsis-3.13', 'nsis-3.13.zip', nsis_zip)
+                      assert hashlib.sha1(nsis_zip.read_bytes()).hexdigest().lower() == 'db14f8af2ea346b786c6ae19343f61aaf5e09b8e'
+                      with zipfile.ZipFile(nsis_zip) as zf:
+                          zf.extractall(tools)
+                      (tools / 'nsis-3.13').rename(tools / 'NSIS')
+                  nsis_util = tools / 'NSIS' / 'Plugins' / 'x86-unicode' / 'additional' / 'nsis_tauri_utils.dll'
+                  if not nsis_util.is_file():
+                      api_download_asset('tauri-apps/nsis-tauri-utils', 'nsis_tauri_utils-v0.5.3', 'nsis_tauri_utils.dll', nsis_util)
+                      assert hashlib.sha1(nsis_util.read_bytes()).hexdigest().lower() == '75197fee3c6a814fe035788d1c34ead39349b860'
+                  if not (tools / 'WixTools314' / 'candle.exe').is_file():
+                      wix_zip = tmp_dir / 'wix314-binaries.zip'
+                      api_download_asset('wixtoolset/wix3', 'wix3141rtm', 'wix314-binaries.zip', wix_zip)
+                      assert hashlib.sha256(wix_zip.read_bytes()).hexdigest().lower() == '6ac824e1642d6f7277d0ed7ea09411a508f6116ba6fae0aa5f2c7daa2ff43d31'
+                      (tools / 'WixTools314').mkdir(parents=True, exist_ok=True)
+                      with zipfile.ZipFile(wix_zip) as zf:
+                          zf.extractall(tools / 'WixTools314')
+          else:
+              xdg = os.environ.get('XDG_CACHE_HOME') or str(pathlib.Path.home() / '.cache')
+              tools = pathlib.Path(xdg) / 'tauri'
+              tools.mkdir(parents=True, exist_ok=True)
+              for repo, tag, asset, target in [
+                  ('tauri-apps/binary-releases', 'apprun-old', 'AppRun-x86_64', 'AppRun-x86_64'),
+                  ('tauri-apps/binary-releases', 'linuxdeploy-07333c6', 'linuxdeploy-x86_64.AppImage', 'linuxdeploy-07333c6-x86_64.AppImage'),
+                  ('linuxdeploy/linuxdeploy-plugin-appimage', 'continuous', 'linuxdeploy-plugin-appimage-x86_64.AppImage', 'linuxdeploy-plugin-appimage.AppImage'),
+              ]:
+                  dest = tools / target
+                  if not dest.is_file():
+                      api_download_asset(repo, tag, asset, dest)
+                      dest.chmod(0o755)
+          print(f'Pre-warmed Tauri bundler cache in {tools}', flush=True)
+          PY
       - name: Bundle native desktop installers
         working-directory: apps/web
         shell: bash
@@ -96,7 +170,14 @@ jobs:
           NO_STRIP: 'true'
         run: |
           CFG="$(cd src-tauri && (pwd -W 2>/dev/null || pwd))/tauri.bundle.json"
-          npx --no-install tauri build --features custom-protocol --config "$CFG" --bundles "${{ matrix.bundles }}" -- --locked
+          for attempt in 1 2 3 4 5; do
+            if npx --no-install tauri build --features custom-protocol --config "$CFG" --bundles "${{ matrix.bundles }}" -- --locked; then
+              exit 0
+            fi
+            echo "tauri bundle attempt $attempt failed (likely transient GitHub release CDN 504); retrying..."
+            sleep $((attempt * 4))
+          done
+          exit 1
       - name: Run native desktop launch smoke and zero-recompilation fifth-agent check
         shell: bash
         run: ${{ matrix.python_cmd }} scripts/smoke_desktop.py --desktop-bin "apps/web/src-tauri/target/release/skill-hub-desktop${{ matrix.exe_ext }}" --cli-bin "target/release/skill-hub${{ matrix.exe_ext }}" --platform "${{ matrix.platform }}" --report "smoke-report-${{ matrix.platform }}.json"

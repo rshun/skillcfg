@@ -1,8 +1,141 @@
-const paths: Record<string,string> = {
-  skills:'M5 3h9l5 5v13H5z M14 3v5h5 M8 13h8 M8 17h6', agents:'M8 4h8v5H8z M4 15h6v5H4z M14 15h6v5h-6z M12 9v3 M7 12h10 M7 12v3 M17 12v3',
-  history:'M4 8a8 8 0 1 1-1 7 M3 3v6h6 M12 7v5l3 2', settings:'M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6', search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 M15 15l6 6',
-  plus:'M12 4v16 M4 12h16', sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1 1 M18 18l1 1 M5 19l1-1 M18 6l1-1', moon:'M20 15a8 8 0 0 1-11-11 8 8 0 1 0 11 11',
-  close:'M6 6l12 12 M18 6 6 18', folder:'M3 6h7l2 2h9v12H3z', code:'M8 7l-5 5 5 5 M16 7l5 5-5 5 M14 4l-4 16', check:'M5 12l4 4L19 6', chevron:'m9 5 7 7-7 7', refresh:'M20 9a8 8 0 0 0-14-5L3 7 M3 2v5h5 M4 15a8 8 0 0 0 14 5l3-3 M21 22v-5h-5', warning:'m12 3 10 18H2z M12 9v5 M12 17h.01', link:'m10 14 4-4 M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0 M16 8l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0', arrow:'M4 12h15 M13 6l6 6-6 6', download:'M12 3v12 M7 10l5 5 5-5 M4 17v4h16v-4',
+export type IconName =
+  | 'library'
+  | 'skills'
+  | 'agents'
+  | 'history'
+  | 'settings'
+  | 'plus'
+  | 'import'
+  | 'download'
+  | 'folder'
+  | 'refresh'
+  | 'close'
+  | 'arrow'
+  | 'search'
+  | 'chevron'
+  | 'command'
+  | 'code'
+  | 'globe'
+  | 'check'
+  | 'edit'
+  | 'grid'
+  | 'shield'
+  | 'warning'
+  | 'link'
+  | 'sun'
+  | 'moon'
+  | 'palette';
+
+const paths: Record<IconName, string[]> = {
+  library: [
+    'M4 5.5A1.5 1.5 0 0 1 5.5 4h4A1.5 1.5 0 0 1 11 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 4 18.5z',
+    'M13 5.5A1.5 1.5 0 0 1 14.5 4h4A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-4a1.5 1.5 0 0 1-1.5-1.5z',
+    'M6.5 8h2',
+    'M15.5 8h2',
+  ],
+  skills: [
+    'M5.5 3.5h8.3L19 8.7v10.8a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 4 19.5V5a1.5 1.5 0 0 1 1.5-1.5z',
+    'M13.5 3.5V9H19',
+    'M8 13h8',
+    'M8 16.5h5.5',
+  ],
+  agents: [
+    'M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 14.5z',
+    'M8.5 20h7',
+    'M12 16v4',
+  ],
+  history: [
+    'M3.5 12a8.5 8.5 0 1 0 2.5-6',
+    'M3.5 4.5v4h4',
+    'M12 7.5v4.5l3 2',
+  ],
+  settings: [
+    'M4 7h9',
+    'M17 7h3',
+    'M15 7a2 2 0 1 0-4 0 2 2 0 0 0 4 0',
+    'M4 17h3',
+    'M11 17h9',
+    'M11 17a2 2 0 1 0-4 0 2 2 0 0 0 4 0',
+  ],
+  plus: ['M12 5v14', 'M5 12h14'],
+  import: ['M12 4v11', 'm7.5 10.5 4.5 4.5 4.5-4.5', 'M4.5 17v2A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-2'],
+  download: ['M12 4v11', 'm7.5 10.5 4.5 4.5 4.5-4.5', 'M4.5 17v2A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-2'],
+  folder: ['M3.5 7A1.5 1.5 0 0 1 5 5.5h4.4a1.5 1.5 0 0 1 1.1.47l1.3 1.53H19A1.5 1.5 0 0 1 20.5 9v8.5A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z'],
+  refresh: [
+    'M20 11A8 8 0 0 0 6.3 6.3L4 8.5',
+    'M4 4.5v4h4',
+    'M4 13a8 8 0 0 0 13.7 4.7L20 15.5',
+    'M20 19.5v-4h-4',
+  ],
+  close: ['M6.5 6.5l11 11', 'M17.5 6.5l-11 11'],
+  arrow: ['M4.5 12h15', 'm13.5 6 6 6-6 6'],
+  search: ['m20.5 20.5-4.35-4.35', 'M17.5 11a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0'],
+  chevron: ['m9 6 6 6-6 6'],
+  command: ['m7.5 8-4 4 4 4', 'M12.5 16h7'],
+  code: ['m8 7-4.5 5L8 17', 'm16 7 4.5 5L16 17', 'm13.8 4.5-3.6 15'],
+  globe: [
+    'M3.5 12h17',
+    'M12 3.5c4.5 4.8 4.5 12.2 0 17-4.5-4.8-4.5-12.2 0-17',
+    'M20.5 12a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0',
+  ],
+  check: ['m5 12.5 4.2 4.2L19 7'],
+  edit: [
+    'M14.5 5.5l4 4',
+    'M4.5 19.5l1.2-4.7L16.3 4.2a1.4 1.4 0 0 1 2 0l1.5 1.5a1.4 1.4 0 0 1 0 2L9.2 18.3z',
+  ],
+  grid: [
+    'M4 5a1 1 0 0 1 1-1h4.5a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z',
+    'M13.5 5a1 1 0 0 1 1-1H19a1 1 0 0 1 1 1v4.5a1 1 0 0 1-1 1h-4.5a1 1 0 0 1-1-1z',
+    'M4 14.5a1 1 0 0 1 1-1h4.5a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z',
+    'M13.5 14.5a1 1 0 0 1 1-1H19a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1h-4.5a1 1 0 0 1-1-1z',
+  ],
+  shield: [
+    'M12 3.2 4 6.7v5.1c0 5 3.4 8.3 8 9.9 4.6-1.6 8-4.9 8-9.9V6.7z',
+    'm8.5 12.2 2.4 2.4 4.8-4.8',
+  ],
+  warning: [
+    'M12 3.8 2.8 19.8a1 1 0 0 0 .87 1.5h16.66a1 1 0 0 0 .87-1.5z',
+    'M12 9.5v4.8',
+    'M12 17.5h.01',
+  ],
+  link: [
+    'm10 14 4-4',
+    'M8.5 16.5l-1 1a3.8 3.8 0 0 1-5.4-5.4l3.6-3.6a3.8 3.8 0 0 1 5.4 0',
+    'M15.5 7.5l1-1a3.8 3.8 0 0 1 5.4 5.4l-3.6 3.6a3.8 3.8 0 0 1-5.4 0',
+  ],
+  sun: [
+    'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+    'M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  ],
+  moon: ['M20.2 14.6A8 8 0 0 1 9.4 3.8a8 8 0 1 0 10.8 10.8z'],
+  palette: [
+    'M12 3a9 9 0 0 0 0 18h1.3a2.2 2.2 0 0 0 1.6-3.7 1.8 1.8 0 0 1 1.3-3h1.3A3.5 3.5 0 0 0 21 10.8C21 6.4 16.9 3 12 3z',
+    'M8 10.5h.01',
+    'M10.8 7.5h.01',
+    'M15 7.8h.01',
+    'M7.3 14.2h.01',
+  ],
 };
-export function Icon({name,size=20}:{name:string;size?:number}) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name] || paths.skills}/></svg>; }
-export function AgentMark({name}:{name:string}) { return <span className="agent-mark" aria-hidden="true">{name.replace(/[^\p{L}\p{N}]/gu,'').slice(0,1).toUpperCase() || '?'}</span>; }
+
+export function Icon({ name, size = 18 }: { name: IconName | string; size?: number }) {
+  const list = paths[name as IconName] || paths.skills;
+  return (
+    <svg
+      className="icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {list.map((d, index) => (
+        <path d={d} key={index} />
+      ))}
+    </svg>
+  );
+}
