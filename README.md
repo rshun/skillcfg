@@ -2,7 +2,7 @@
 
 本地 Skill 管理与跨 Agent 手动分发工具。内置 Codex、Claude Code、Antigravity 和 Grok Build，普通新增 Agent 通过 JSON 档案接入。
 
-首版 v0.1.0 提供 Windows x64（NSIS `-setup.exe`、`.msi`、`-portable.zip` 与 CLI `.zip`）、macOS Apple Silicon arm64 与 Intel x64（各含 `.dmg`、`.app.tar.gz` 与 CLI `.tar.gz`）以及 Linux x64（`.AppImage`、`.deb` 与 CLI `.tar.gz`，基线 `glibc >= 2.39`），均附 SHA-256 摘要与运行环境基线；见 [发布说明](docs/releases/v0.1.0.md)、[平台验证矩阵](docs/PLATFORMS.md) 与 [人工验收手册](docs/MANUAL-VALIDATION.md)。所有制品由 GitHub Actions 在完整验证通过后生成，未获单独授权前不自动打标签或发布 GitHub Release。
+当前版本为 **v0.2.0**（首版 CLI 为 [v0.1.0](docs/releases/v0.1.0.md)），提供 Windows x64（NSIS `-setup.exe`、`.msi`、`-portable.zip` 与 CLI `.zip`）、macOS Apple Silicon arm64 与 Intel x64（各含 `.dmg`、`.app.tar.gz` 与 CLI `.tar.gz`）以及 Linux x64（`.AppImage`、`.deb` 与 CLI `.tar.gz`，基线 `glibc >= 2.39`），均附 SHA-256 摘要与运行环境基线；见 [v0.2.0 发布说明](docs/releases/v0.2.0.md)、[平台验证矩阵](docs/PLATFORMS.md) 与 [人工验收手册](docs/MANUAL-VALIDATION.md)。所有制品由 GitHub Actions 在完整验证通过后生成。
 
 ## 当前状态
 

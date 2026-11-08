@@ -1,7 +1,7 @@
 {
   "name": "skill-hub-web",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "test": "node --experimental-strip-types --test tests/selection.test.mjs tests/session.test.mjs tests/contract.test.mjs",

@@ -4,10 +4,10 @@
 
 | GitHub runner | 构建与测试架构 | 桌面产物（`release.yml`） | CLI 产物（`release.yml` / `ci.yml`） | 原生运行与自动化范围 |
 |---|---|---|---|---|
-| `ubuntu-24.04` | Linux `x86_64` | `skill-hub-desktop-v0.1.0-linux-x64.AppImage`、`.deb` | `skill-hub-cli-v0.1.0-linux-x64.tar.gz`（及日常 `ci.yml` 的 `skill-hub-v0.1.0-x86_64-unknown-linux-gnu.zip`） | 核心/IO/应用/CLI 114 项测试、真实 Chrome 34 项测试（33 个交互子场景与 200% 缩放截图）、Tauri 原生桥接/端到端 9 项测试、`xvfb-run` 桌面启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
-| `windows-2022` | Windows `x86_64` | `skill-hub-desktop-v0.1.0-windows-x64-setup.exe`（NSIS）、`.msi`、`-portable.zip` | `skill-hub-cli-v0.1.0-windows-x64.zip`（及日常 `ci.yml` 的 `skill-hub-v0.1.0-x86_64-pc-windows-msvc.zip`） | 核心/IO/应用/CLI 108 项测试（含 Windows 保留名、junction、共享句柄冲突、长路径）、Tauri 原生桥接/端到端 9 项测试、Win32/WebView2 桌面进程启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
-| `macos-15` | macOS `arm64`（Apple Silicon） | `skill-hub-desktop-v0.1.0-macos-arm64.dmg`、`.app.tar.gz` | `skill-hub-cli-v0.1.0-macos-arm64.tar.gz`（及日常 `ci.yml` 的 `skill-hub-v0.1.0-aarch64-apple-darwin.zip`） | 原生 `arm64` 编译与运行 113 项核心测试 + 9 项原生桌面测试（非交叉编译替代）、Unix 执行位与 rename 恢复、桌面进程启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
-| `macos-15-intel` | macOS `x86_64`（Intel） | `skill-hub-desktop-v0.1.0-macos-x64.dmg`、`.app.tar.gz` | `skill-hub-cli-v0.1.0-macos-x64.tar.gz`（及日常 `ci.yml` 的 `skill-hub-v0.1.0-x86_64-apple-darwin.zip`） | 原生 `x86_64` 编译与运行 113 项核心测试 + 9 项原生桌面测试（非交叉编译替代）、Unix 执行位与 rename 恢复、桌面进程启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
+| `ubuntu-24.04` | Linux `x86_64` | `skill-hub-desktop-v0.2.0-linux-x64.AppImage`、`.deb` | `skill-hub-cli-v0.2.0-linux-x64.tar.gz`（及日常 `ci.yml` 的 `skill-hub-v0.2.0-linux-x64.zip`） | 核心/IO/应用/CLI 114 项测试、真实 Chrome 34 项测试（33 个交互子场景与 200% 缩放截图）、Tauri 原生桥接/端到端 9 项测试、`xvfb-run` 桌面启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
+| `windows-2022` | Windows `x86_64` | `skill-hub-desktop-v0.2.0-windows-x64-setup.exe`（NSIS）、`.msi`、`-portable.zip` | `skill-hub-cli-v0.2.0-windows-x64.zip`（及日常 `ci.yml` 的 `skill-hub-v0.2.0-windows-x64.zip`） | 核心/IO/应用/CLI 108 项测试（含 Windows 保留名、junction、共享句柄冲突、长路径）、Tauri 原生桥接/端到端 9 项测试、Win32/WebView2 桌面进程启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
+| `macos-15` | macOS `arm64`（Apple Silicon） | `skill-hub-desktop-v0.2.0-macos-arm64.dmg`、`.app.tar.gz` | `skill-hub-cli-v0.2.0-macos-arm64.tar.gz`（及日常 `ci.yml` 的 `skill-hub-v0.2.0-macos-arm64.zip`） | 原生 `arm64` 编译与运行 113 项核心测试 + 9 项原生桌面测试（非交叉编译替代）、Unix 执行位与 rename 恢复、桌面进程启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
+| `macos-15-intel` | macOS `x86_64`（Intel） | `skill-hub-desktop-v0.2.0-macos-x64.dmg`、`.app.tar.gz` | `skill-hub-cli-v0.2.0-macos-x64.tar.gz`（及日常 `ci.yml` 的 `skill-hub-v0.2.0-macos-x64.zip`） | 原生 `x86_64` 编译与运行 113 项核心测试 + 9 项原生桌面测试（非交叉编译替代）、Unix 执行位与 rename 恢复、桌面进程启动 smoke、零重编译第五个 Agent CLI+桌面验证 |
 
 核心 manifest 的最低 Rust 声明为 1.85；统一验证与打包工具链固定为 Rust `1.90.0`、Node `24`。runner 名称和架构核对自 [GitHub 官方说明](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。所有系统构建依赖仅在 GitHub Actions 临时 runner 安装，不在用户或开发者本机安装。
 
